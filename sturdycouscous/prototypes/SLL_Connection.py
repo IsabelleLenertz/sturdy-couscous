@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c5cb5ea (Create SLL_Connection.py)
 #Connection.bind(address)
 #Connection.connect(address)
 #Connection.get_peer_certificate()
@@ -53,6 +56,7 @@ while True:
     if not buf:
         break
 connection.close()
+<<<<<<< HEAD
 =======
 #Connection.bind(address)
 #Connection.connect(address)
@@ -109,3 +113,5 @@ while True:
         break
 connection.close()
 >>>>>>> 915b8f0dd1682ae5b1b51275c0ca41aa68f0f785
+=======
+>>>>>>> c5cb5ea (Create SLL_Connection.py)
