@@ -2,7 +2,6 @@ import socket, ssl
 def get_tls_version(domain="google.com"):
 	context = ssl.create_default_context()
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	domain = 'google.com'
 	sslSocket = context.wrap_socket(s, server_hostname = domain)
 	sslSocket.connect((domain, 443))
 	print(sslSocket.version())
