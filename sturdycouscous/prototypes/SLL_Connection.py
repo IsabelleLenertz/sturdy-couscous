@@ -32,7 +32,7 @@ context = SSL.Context(SSL.TLSv1_2_METHOD);
 context.set_verify(SSL.VERIFY_PEER, verify_cb); # when receiving a certificate, call the callback method defeind above
 
 # Set up connection client
-'''connection = SSL.Connection(context, socket.socket(socket.AF_INET, socket.SOCK_STREAM))
+connection = SSL.Connection(context, socket.socket(socket.AF_INET, socket.SOCK_STREAM))
 connection.connect(("google.com", 443))
 
 # Sends a simple get request
@@ -51,4 +51,4 @@ while True:
         break
     if not buf:
         break
-connection.close()'''
+connection.close()
