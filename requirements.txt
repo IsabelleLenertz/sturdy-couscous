@@ -1,1 +1,7 @@
+<<<<<<< HEAD
 # To ensure app dependencies are ported from your virtual environment/host machine into your container, run 'pip freeze > requirements.txt' in the terminal to overwrite this file
+=======
+pyopenssl
+beautifulsoup4
+scrapy
+>>>>>>> Added scrapy and beautifulsoup
