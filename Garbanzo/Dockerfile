@@ -1,7 +1,7 @@
 FROM python
 WORKDIR /usr/src/app
 COPY requirements.txt ./
-COPY test_script.py ./
+COPY obtain_tls_version.py ./
 
 RUN pip install --no-cache-dir -r requirements.txt
 
