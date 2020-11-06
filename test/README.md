@@ -6,6 +6,6 @@ Currently, you can test each endpoint once a container is running with `curl -ss
 <br/>
 To build the container, use the following command:<br/>
 `docker build -t couscoustest .`<br/>
-In order to run the container, use the following command:<br/>
-`docker run -d -p 500:500 -p 600:600 couscoustest`
+In order to run the container, use the following command from this directory. Otherwise, replace `$PWD` with a path to the current directory:<br/>
+`docker run -d -p 500:500 -p 600:600 -v $PWD/conf:/etc/nginx/conf.d/ couscoustest`
 
