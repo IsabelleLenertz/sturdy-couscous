@@ -8,3 +8,7 @@ The autor of this repository do not allow use, modification, or sharing of this 
 * Isabelle Delmas, 
 * Janani Sridhar, 
 * Sohrab (aka Robby) Boparai
+
+# Usage Info
+* to run unit tests: $ python -B -m unittest sturdycouscous/unit_tests/src/*
+* to start a container with bash session runnnig: $ docker container run -itd idelmas/sturdy-couscous:latest bash &

@@ -1,3 +1,4 @@
 pyopenssl
 beautifulsoup4
 scrapy
+requests
