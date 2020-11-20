@@ -2,7 +2,7 @@
 # 1) Check certificate validity 
 # 2) Check TLS versions supported
 # 3) Look for open ports
-# 4) Get all ciphers supported (?)
+# 4) Get all ciphers supported 
 import socket, ssl
 import copy
 from datetime import datetime
@@ -28,15 +28,27 @@ class connection_checker():
 
 	# Checks whether the certificate obtained using the default_context is still valid.
 	# Returns True if certificate is still valid.
-	def certificate_checker(self, domain):
+	# Tabling the discussion for revoked certificates for later, since it's a bit complicated.
+	def certificate_checker(self, domain, port=443):
 		context = ssl.create_default_context()
 		sslSocket = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname = domain)
-		sslSocket.connect((domain, 443))
 		
-		cert = sslSocket.getpeercert()
-		expiry_date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
+		# sslSocket.connect((domain, port))
+		# cert = sslSocket.getpeercert()
+		# expiry_date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
+		# return datetime.now() < expiry_date
 
-		return datetime.now() < expiry_date
+		# sslSocket.connect can throw an error
+		valid_cert = False
+		try:
+			sslSocket.connect((domain, port))
+			cert = sslSocket.getpeercert()
+			expiry_date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
+			valid_cert = datetime.now() < expiry_date
+		except:
+			pass
+		finally:
+			return valid_cert
 
 
 	# Returns the list of all tls contexts
@@ -142,7 +154,5 @@ class connection_checker():
 					supported_cipher_dict[tls_version].append(cipher)
 
 		return supported_cipher_dict
-
-
 
 
