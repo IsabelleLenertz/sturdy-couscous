@@ -64,12 +64,23 @@ class check_tester(unittest.TestCase):
 
 	# Test ciphers.
 	def test_ciphers(self):
-		# Can test against tls 1.1 to make sure no tls 1.3 ciphers are there
-		# same with SSLv2/3 ciphers...?
-		
-		# found this site: https://null.badssl.com/
-		pass
+		conn_checker = connection_checker()
+		all_ciphers = conn_checker.get_all_ciphers()
 
+		# found this site: https://null.badssl.com/ that uses no ciphers. 
+		null_ciphers = conn_checker.get_supported_ciphers(domain="null.badssl.com", tls_versions_supported=['TLSv1.2'])
+		self.assertTrue(len(null_ciphers['TLSv1.2']) == 0)
+
+		# Checking that a TLS v1.3 only site doesn't have any TLS v1.1 ciphers.
+		tls_versions_supported = conn_checker.tls_versions_checker(domain="tls13.1d.pw")
+		v1_3_ciphers = conn_checker.get_supported_ciphers(domain="tls13.1d.pw", tls_versions_supported=tls_versions_supported)
+		
+		flattened_ciphers = []
+		for version in v1_3_ciphers:
+			flattened_ciphers += v1_3_ciphers[version]
+
+		self.assertFalse(all_ciphers['TLSv1.0'][0] in flattened_ciphers)
+		self.assertTrue(len(v1_3_ciphers['TLSv1.3']) != 0)
 
 
 if __name__ == "__main__":

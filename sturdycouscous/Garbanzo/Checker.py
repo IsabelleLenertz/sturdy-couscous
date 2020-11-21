@@ -138,33 +138,42 @@ class connection_checker():
 	# Returns a list of all ciphers supported by the domain's context 
 	def get_supported_ciphers(self, domain, tls_versions_supported, port=443):
 
-		# actually SO we have to make a list of all the ciphers the client supports sorted out by TLS version
+		# actually so we have to make a list of all the ciphers the client supports sorted out by TLS version
 		# and force a connection for each of those using that particular cipher, and see if it works or not.
 		supported_cipher_dict = {version: [] for version in tls_versions_supported}
 		all_ciphers = self.get_all_ciphers()
 		
 		for tls_version in tls_versions_supported:
 
-			for cipher in all_ciphers[tls_version]:
-				# obtain context that uses only that tls version.
-				# force that one cipher
-				cipher_context = self.get_context_by_version(tls_version)
-				cipher_context.set_ciphers(cipher)
-
-				# create connection and check result.
+			if tls_version == "TLSv1.3":
+				# cannot disable any of the TLS1.3 ciphers. 
+				# can only get the shared cipher at the time being.
 				s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				socket.setdefaulttimeout(1)
+				sslSocket = self.get_context_by_version("TLSv1.3").wrap_socket(s, server_hostname=domain)
+				sslSocket.connect((domain, port))
+				supported_cipher_dict["TLSv1.3"].append(sslSocket.cipher()[0])
+				sslSocket.close()
 
-				sslSocket = cipher_context.wrap_socket(s, server_hostname = domain)
+			else:
+				for cipher in all_ciphers[tls_version]:
+					# create context for that tls version and force the one cipher.
+					cipher_context = self.get_context_by_version(tls_version)
+					cipher_context.set_ciphers(cipher)
 
-				try:		
-					result = sslSocket.connect_ex((domain, port))
-					if (result == 0):
-						supported_cipher_dict[tls_version].append(cipher)
-				except ssl.SSLError:
-					pass
-				finally:
-					sslSocket.close()
+					# set timeout to 1 second.
+					s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+					socket.setdefaulttimeout(1)
+					sslSocket = cipher_context.wrap_socket(s, server_hostname = domain)
+
+					# If the cipher doesn't work, we get a ssl.SSLError HANDSHAKE failure.
+					try:		
+						result = sslSocket.connect_ex((domain, port))
+						if (result == 0):
+							supported_cipher_dict[tls_version].append(cipher)
+					except ssl.SSLError:
+						pass
+					finally:
+						sslSocket.close()
 
 		return supported_cipher_dict
 
