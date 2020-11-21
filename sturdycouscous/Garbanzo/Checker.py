@@ -34,11 +34,6 @@ class connection_checker():
 		context = ssl.create_default_context()
 		sslSocket = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname = domain)
 		
-		# sslSocket.connect((domain, port))
-		# cert = sslSocket.getpeercert()
-		# expiry_date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
-		# return datetime.now() < expiry_date
-
 		# sslSocket.connect can throw an error
 		valid_cert = False
 		try:
@@ -93,7 +88,7 @@ class connection_checker():
 			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	
 			sslSocket = context.wrap_socket(s, server_hostname = domain)
 			sslSocket.connect((domain, port))
-			print(sslSocket.version())
+			# print(sslSocket.version())
 		except:
 			success = False
 		finally:
@@ -105,7 +100,7 @@ class connection_checker():
 	# socket.shared_ciphers returns only the client-side ciphers.
 	# therefore, need to test one by one.
 	def get_all_ciphers(self):
-		domain = "https://www.google.com"
+		domain = "www.google.com"
 		context = ssl.create_default_context()
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	
 		sslSocket = context.wrap_socket(s, server_hostname = domain)
@@ -127,6 +122,18 @@ class connection_checker():
 		sslSocket.close()
 		return cipher_dict
 
+	# Returns a context for a given TLS version.
+	def get_context_by_version(self, tls_version):
+		if tls_version == "TLSv1.3":
+			tlsv1_3_context = ssl.create_default_context()
+			tlsv1_3_context.options |= (ssl.PROTOCOL_TLS | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2)
+			return tlsv1_3_context
+		elif tls_version == "TLSv1.2":
+			return ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+		elif tls_version == "TLSv1.1":
+			return ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
+		elif tls_version == "TLSv1.0":
+			return ssl.SSLContext(ssl.PROTOCOL_TLSv1) 
 
 	# Returns a list of all ciphers supported by the domain's context 
 	def get_supported_ciphers(self, domain, tls_versions_supported, port=443):
@@ -136,27 +143,28 @@ class connection_checker():
 		supported_cipher_dict = {version: [] for version in tls_versions_supported}
 		all_ciphers = self.get_all_ciphers()
 		
-		# mapping String TLS version to its corresponding context.
-		contexts_dict = self.get_all_tls_contexts()[0]
-		flipped_contexts = {item[1]: item[0] for item in contexts_dict.items()}
-
 		for tls_version in tls_versions_supported:
 
-			# obtain context that uses only that tls version.
-			context = flipped_contexts[tls_version]
-
 			for cipher in all_ciphers[tls_version]:
-				# force that one cipher.
-				cipher_context = copy.deepcopy(context)
+				# obtain context that uses only that tls version.
+				# force that one cipher
+				cipher_context = self.get_context_by_version(tls_version)
 				cipher_context.set_ciphers(cipher)
 
 				# create connection and check result.
 				s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				sslSocket = tlsv1_2_context.wrap_socket(s, server_hostname = domain)		
-				result = sslSocket.connect_ex((domain, port))
-				if (result == 0):
-					supported_cipher_dict[tls_version].append(cipher)
-				sslSocket.close()
+				socket.setdefaulttimeout(1)
+
+				sslSocket = cipher_context.wrap_socket(s, server_hostname = domain)
+
+				try:		
+					result = sslSocket.connect_ex((domain, port))
+					if (result == 0):
+						supported_cipher_dict[tls_version].append(cipher)
+				except ssl.SSLError:
+					pass
+				finally:
+					sslSocket.close()
 
 		return supported_cipher_dict
 
