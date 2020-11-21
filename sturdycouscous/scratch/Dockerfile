@@ -1,4 +1,4 @@
-FROM python
+FROM python:2
 WORKDIR /usr/src/app
 COPY oldopensslinstall.sh ./
-RUN ./oldopensslinstall.sh
+COPY test.py ./
