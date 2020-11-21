@@ -23,6 +23,7 @@ class connection_checker():
 			result = s.connect_ex((domain, port))
 			if (result == 0):
 				ports_open.append(port)
+			s.close()
 
 		return ports_open
 
@@ -48,6 +49,7 @@ class connection_checker():
 		except:
 			pass
 		finally:
+			sslSocket.close()
 			return valid_cert
 
 
@@ -95,6 +97,7 @@ class connection_checker():
 		except:
 			success = False
 		finally:
+			sslSocket.close()
 			return success
 	
 
@@ -121,6 +124,7 @@ class connection_checker():
 			if cipher[1] in ["TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1.0"]:
 				cipher_dict[cipher[1]].append(cipher[0])				
 
+		sslSocket.close()
 		return cipher_dict
 
 
@@ -152,6 +156,7 @@ class connection_checker():
 				result = sslSocket.connect_ex((domain, port))
 				if (result == 0):
 					supported_cipher_dict[tls_version].append(cipher)
+				sslSocket.close()
 
 		return supported_cipher_dict
 

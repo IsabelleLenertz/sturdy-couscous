@@ -19,8 +19,8 @@ class check_tester(unittest.TestCase):
 	# Sanity check that "bad" ports are closed.
 	def test_ports(self):
 		checker = connection_checker()
-		domain = "https://www.amazon.com"
-		ports_open = checker.port_checker()
+		domain = "amazon.com"
+		ports_open = checker.port_checker(domain)
 
 		# There should at least be 443 open.
 		self.assertTrue(len(ports_open) > 0)
