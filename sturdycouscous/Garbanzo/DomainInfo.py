@@ -5,6 +5,7 @@ class domain_info():
 	def __init__(self, domain):
 		# Provided by Security Crawler
 		self.domain = domain
+		self.title = title # for "habitat classifier" purposes
 
 		# To be filled in by SecurityCrawler + Checker
 		self.tls_versions_supported = None
