@@ -27,13 +27,13 @@ class Parser:
             children.add(link.attrs['href'])
         return children
 
-    def get_links_from_child_page(self):
+    def get_links_from_child_pages(self):
         children = self.get_links()
         grand_children = set()
         for child in children:
             child_page = Parser(child)
-            grand_children = grand_children.intersection(child_page.get_links())
-        return children.intersection(grand_children)
+            grand_children = grand_children.union(child_page.get_links())
+        return children.union(grand_children)
 
     def get_link_from_descendent(self, depth):
         if depth < 0 :

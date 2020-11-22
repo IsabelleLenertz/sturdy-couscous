@@ -15,7 +15,7 @@ class Mock_Response:
     status_code = 200
     content = ""
 
-    def __init__(self, url):
+    def __init__(self, file):
         with open('sturdycouscous/unit_tests/resources/links.html') as file:
             self.content = file.read()
 
@@ -27,18 +27,22 @@ class  ParserTestCase(TestCase):
         pass
     @patch('sturdycouscous.bouneschlupp.parser.requests.get', new=Mock_Response)
     def test_get_links(self):
-        my_parser = parser.Parser("http://not_a_url")
+        my_parser = parser.Parser("links.html")
         links =  my_parser.get_links()
         self.assertIn("https://www.google.com/", links, msg="link missing")
-        self.assertIn("https://www.w3.org/", links, msg="link missing")
+        self.assertIn("children_links.html", links, msg="link missing")
         self.assertIn("html_images.asp", links, msg="link missing")
         self.assertIn("/css/default.asp", links, msg="link missing")
         self.assertTrue(len(links) == 4)
 
-    def test_get_links_from_child_page(self):
-        #define tests here
-        pass
+    @patch('sturdycouscous.bouneschlupp.parser.requests.get', new=Mock_Response)
+    def test_get_links_from_child_pages(self):
+        my_parser = parser.Parser("links.html")
+        family = my_parser.get_links_from_child_pages()
+        self.assertIn("https://www.child-1.com", family)
+        self.assertIn("/css/default.asp", family)
+    
+    @patch('sturdycouscous.bouneschlupp.parser.requests.get', new=Mock_Response)
     def test_get_link_from_descendent(self):
-        #define tests here
         pass
-
+        
