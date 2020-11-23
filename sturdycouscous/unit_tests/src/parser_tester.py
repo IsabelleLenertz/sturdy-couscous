@@ -15,8 +15,8 @@ class Mock_Response:
     status_code = 200
     content = ""
 
-    def __init__(self, file):
-        with open('sturdycouscous/unit_tests/resources/links.html') as file:
+    def __init__(self, html_file):
+        with open('sturdycouscous/unit_tests/resources/' + html_file) as file:
             self.content = file.read()
 
 class  ParserTestCase(TestCase):
@@ -44,5 +44,10 @@ class  ParserTestCase(TestCase):
     
     @patch('sturdycouscous.bouneschlupp.parser.requests.get', new=Mock_Response)
     def test_get_link_from_descendent(self):
-        pass
+        my_parser = parser.Parser("links.html")
+        family_1 = my_parser.get_link_from_descendent(2)
+        family_2 = my_parser.get_links_from_child_pages()
+        self.assertCountEqual(family_1, family_2)
+        for element in family_2:
+            self.assertIn(element, family_1)
         
