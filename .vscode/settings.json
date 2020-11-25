@@ -1,0 +1,15 @@
+{
+    "python.testing.unittestEnabled": true,
+    "python.testing.cwd": "sturdycouscous/unit_tests/src/",
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./sturdycouscous",
+        "-p",
+        "*test*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.nosetestsEnabled": false
+
+    
+}
