@@ -1,4 +1,5 @@
-from Garbanzo import Checker
+from Garbanzo import Checker, DomainInfo
+from bouneschlupp import Parser
 import pandas as pd 
 import re
 # Driver for Checker interface.
@@ -18,6 +19,7 @@ class security_crawler():
 	def __init__(self):
 		
 		self.sites_visited = set()
+		self.domain_infos = set()
 		self.red_list = set()
 		self.db_client = None
 
@@ -35,6 +37,8 @@ class security_crawler():
 			if domain not in self.sites_visited:
 				print(domain)
 				self.sites_visited.add(domain)
+
+				# checking_time:
 		
 
 	def grab_tld(self, url):
