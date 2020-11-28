@@ -27,7 +27,7 @@ def custom_port(site):
 
 for site in sites:
     print("checking site: " + str(site))
-    if isinstance(site, list):
+    if isinstance(custom_port(site), list):
         print(site)
         print(check_tls(site[0], site[1]))
     else:
