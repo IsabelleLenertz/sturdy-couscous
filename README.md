@@ -11,4 +11,5 @@ The autor of this repository do not allow use, modification, or sharing of this 
 
 # Usage Info
 * to run unit tests: $ python -B -m unittest sturdycouscous/unit_tests/src/*
+* to run checker unit tests: from the sturdycouscous directory: $ python -m unittest unit_tests/src/CheckTester.py
 * to start a container with bash session runnnig: $ docker container run -itd idelmas/sturdy-couscous:latest bash &
