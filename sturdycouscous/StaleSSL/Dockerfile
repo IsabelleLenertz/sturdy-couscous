@@ -1,7 +1,7 @@
 FROM python:2
 WORKDIR /usr/src/app
 COPY requirements.txt ./
-COPY checker.py ./
+COPY stale_checker.py ./
 COPY ws_client.py ./
 
 EXPOSE 8888
