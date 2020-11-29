@@ -1,38 +1,29 @@
 from enum import Enum
 from bs4 import BeautifulSoup
+from ClassifierTraining import Category
+import mongoengine as me
 
 """ Constents used  by the Classifier module"""
-class Catregories(Enum):
-    EDUCATION = 0
-    GOVERNMENT = 1
-    IT = 2
-    OTHER = 3
-    SHOPPING = 4
-    SOCIAL_MEDIA = 5
-
+class Category(me.Document):
+    id = me.StringField(required=True, unique = True, primary_key = True)
+    keywords = me.ListField(field = me.StringField(), required=True)
 class Classifier:
-    """ Classifies websites in 6 categories:  social media, education, government, IT/dev, shopping, other
 
-    Attributes: 
-        url -- URL of the page to classify
-        html content -- HTML tags of the page to classify
-        analyse_report -- Json returned to the caller
-
-            { 
-                URL:https://github.com/IsabelleLenertz/sturdy-couscous
-                Title: sturdy-couscous,
-                Domain: Github,
-                Classification: {
-                Categories: [social media, IT/dev],
-                Data: {
-                    Keywords: [...., ...]
-                    Extention: [".com"]
-                    Tags: [ {tag:...., attributes [..] } , {.....} ]
-                }
-    """
-    def __init__(self, url, html):
+    def __init__(self, url):
         self.url = url
-        self.html = html
         
-        # look for key words in the html
+        # First, get the page content and parse into a beautiful tree
         
+        # Extract and normalized keywords from <head>
+        keywords = None
+        evaluation = {}
+        # Count keywords in each category
+        me.connect('classifier_training_set', host='sss', port = 2222)
+        for category in Category.objects:
+            counter = 0;
+            for word in keywords:
+                if word in category.keywords:
+                    counter += 1 
+            evaluation.insert(category.id, counter)
+        
+        # Returns the category with the highest score
