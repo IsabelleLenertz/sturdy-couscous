@@ -1,4 +1,4 @@
-from Checker import *
+from Garbanzo.Checker import *
 import unittest
 
 # The four main functions to test are:

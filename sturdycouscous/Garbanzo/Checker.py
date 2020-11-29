@@ -4,6 +4,7 @@
 # 3) Look for open ports
 # 4) Get all ciphers supported 
 import socket, ssl
+import requests
 import copy
 from datetime import datetime
 
@@ -70,13 +71,13 @@ class connection_checker():
 		return contexts_dict, contexts		
 
 	# Returns a list of all TLS verions supported for the given domain. 
-	def tls_versions_checker(self, domain):
+	def tls_versions_checker(self, domain, port=443):
 		# Contexts for each TLS version		
 		contexts_dict, contexts = self.get_all_tls_contexts()
 		versions_supported = []
 
 		for context in contexts:
-			if self.test_tls_version(context, domain):
+			if self.test_tls_version(context, domain, port):
 				versions_supported.append(contexts_dict[context])
 
 		return versions_supported
@@ -100,13 +101,9 @@ class connection_checker():
 	# socket.shared_ciphers returns only the client-side ciphers.
 	# therefore, need to test one by one.
 	def get_all_ciphers(self):
-		domain = "www.google.com"
 		context = ssl.create_default_context()
-		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)	
-		sslSocket = context.wrap_socket(s, server_hostname = domain)
-		sslSocket.connect((domain, 443))
 
-		all_ciphers = sslSocket.shared_ciphers()
+		all_ciphers = context.get_ciphers()
 
 		cipher_dict = {
 			"TLSv1.0": [],
@@ -116,10 +113,9 @@ class connection_checker():
 		}
 
 		for cipher in all_ciphers:
-			if cipher[1] in ["TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1.0"]:
-				cipher_dict[cipher[1]].append(cipher[0])				
+			if cipher['protocol'] in ["TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1.0"]:
+				cipher_dict[cipher['protocol']].append(cipher['name'])				
 
-		sslSocket.close()
 		return cipher_dict
 
 	# Returns a context for a given TLS version.
