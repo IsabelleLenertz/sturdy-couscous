@@ -18,30 +18,83 @@ class security_crawler():
 
 	def __init__(self):
 		
-		self.sites_visited = set()
+		self.sites_visited = set()	#do we need this?
 		self.domain_infos = set()
 		self.red_list = set()
 		self.db_client = None
 
 
-	def read_csv(self, filename):
+	def get_history(self, filename):
+		unique_history = set()
 		df = pd.read_csv(filename)
 		
-		checker = Checker.connection_checker()		
 		for indx, row in df.iterrows():
 			url = row['url']
-			domain = self.grab_tld(url)
+			if url not in unique_history:
+				unique_history.add(url)
+
+		return unique_history
+
+	def get_children_from_history(self, unique_history):
+		# create "parser" objects for each of the urls.
+
+		super_set = unique_history.union(unique_history)
+
+		for link in unique_history:
+			p = Parser.parser(link)
+			super_set = super_set.union(p.get_links_from_child_pages())
+
+		return super_set
+
+
+	def parse_all_links(self, history):
+		filtered_set = set()
+		for link in history:
+			domain_name = self.grab_domain_name(link)
+			filtered_set.add(domain_name)
+
+		return filtered_set
+
+	def tls_analysis(self, domain_list):
+
+		c = connection_checker()
+
+		for domain in domain_list:
+			print(domain)
+			d = DomainInfo.domain_info(domain)
+			
+			d.valid_cert = c.certificate_checker(domain)
+			d.ports_open = c.port_checker(domain)
+			d.tls_versions_supported = c.tls_versions_checker(domain)
+			d.ciphers_supported = c.get_supported_ciphers(domain)
+			
+			domain_infos.add(d)
+
+			# redlist websites supporting tls v1 and v1.1
+			if ('TLSv1.1' in dl.tls_versions_supported) or ('TLSv1.0' in dl.tls_versions_supported):
+				red_list.add(domain)
+
+
+
+
+	# def read_csv(self, filename):
+	# 	df = pd.read_csv(filename)
+		
+	# 	checker = Checker.connection_checker()		
+	# 	for indx, row in df.iterrows():
+	# 		url = row['url']
+	# 		domain = self.grab_tld(url)
 			
 
-			# if top-level domain is not in site visited, mark it as visited, then perform checks.
-			if domain not in self.sites_visited:
-				print(domain)
-				self.sites_visited.add(domain)
+	# 		# if top-level domain is not in site visited, mark it as visited, then perform checks.
+	# 		if domain not in self.sites_visited:
+	# 			print(domain)
+	# 			self.sites_visited.add(domain)
 
-				# checking_time:
+	# 			# checking_time:
 		
 
-	def grab_tld(self, url):
+	def grab_domain_name(self, url):
 		
 		common_tlds = ['com', 'net', 'org', 'edu', 'gov']
 		url_split = re.split('\.|/', url)
@@ -58,9 +111,17 @@ class security_crawler():
 		return domain_name
 
 
+	def crawl(self):
+		history = self.get_history(filename="history_small.csv")
+		all_history = self.get_children_from_history(history)
+		filtered_set = self.parse_all_links(all_history)
+
+		self.tls_analysis(filtered_set)
+
+
 if __name__ == "__main__":
 	sc = security_crawler()
-	sc.read_csv(filename="history_small.csv")
+	sc.crawl()
 
 
 
