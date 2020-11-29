@@ -130,3 +130,6 @@ dmypy.json
 
 # Docker stuff
 .devcontainer/
+
+# Mongo stuff
+sturdycouscous/db/mongo/data/

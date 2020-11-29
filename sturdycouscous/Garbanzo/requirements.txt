@@ -1,0 +1,7 @@
+pyopenssl
+beautifulsoup4
+scrapy
+aioredis
+websockets
+requests
+pymongo

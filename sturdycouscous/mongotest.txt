@@ -1,0 +1,24 @@
+from pymongo import MongoClient, errors
+
+DOMAIN = '172.19.0.3'
+PORT = 27017
+
+database_names=[]
+
+try:
+    client = MongoClient(
+            host = [ str(DOMAIN) + ":" + str(PORT) ],
+            serverSelectionTimeoutMS = 3000, # 3 second timeout
+            username = "root",
+            password = "1234"
+    )
+
+    print("Server version: ", client.server_info()["version"])
+
+    database_names = client.list_database_names()
+
+except errors.ServerSelectionTimeoutError as err:
+    print("pymongo ERROR: ", err)
+    
+print ("\ndatabases:", database_names)
+
