@@ -9,8 +9,13 @@
         "*test*.py"
     ],
     "python.testing.pytestEnabled": false,
+<<<<<<< HEAD
     "python.testing.nosetestsEnabled": false,
     "git.ignoreLimitWarning": true
+=======
+    "python.testing.nostetessEnabled": false,
+    "python.testing.nosetestsEnabled": false
+>>>>>>> using mongodb to store training data and result data query mongo to evaluate a website
 
     
 }
