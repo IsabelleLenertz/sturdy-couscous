@@ -3,6 +3,7 @@ from pymongo import MongoClient, errors
 DOMAIN = 'garbanzomongo'
 PORT = 27017
 DB_NAME = "garbanzodb"
+COLUMN_NAME = "tls_checks"
 
 def connect_client():
     try:
@@ -12,16 +13,37 @@ def connect_client():
                 username = "root",
                 password = "root"
         )
-        print("Server version: ", client.server_info()["version"])
         return client
     except errors.ServerSelectionTimeoutError as err:
         print("pymongo ERROR: ", err)
         return None
-        
-client = connect_client()
-db = client["garbanzodb"]
 
-if client:
-    database_names=client.list_database_names()
-print ("\ndatabases:", database_names)
+def insert(inputdict):
+    return column.insert_one(inputdict)
+
+client = connect_client()
+db = client[DB_NAME]
+column = db[COLUMN_NAME]
+
+mock_tls_check = {
+    "URL":"https://github.com/IsabelleLenertz/sturdy-couscous",
+    "Title":"sturdy-couscous",
+    "Domain":"`Github",
+    "Classification": {
+        "Categories":["social media", "IT/dev"],
+        },
+    "Data": {
+        "Keywords": ['testkeyword1', 'testkeyword2'], 
+        },
+    "Extension": [".com"],
+    "Tags": {
+        "tag":"testtag1",
+        }
+    }
+
+print(insert(mock_tls_check))
+
+# Check DB read
+for each in column.find():
+    print(each)
 

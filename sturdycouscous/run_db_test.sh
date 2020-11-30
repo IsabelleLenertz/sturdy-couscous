@@ -11,7 +11,7 @@ function makeNetwork() {
 
 function launchMongo() {
 	docker build -t dbtestimage $PWD/db/.
-	docker run --network=$NETWORK_NAME --name $MONGO_CONTAINER_NAME -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=root -h py-mongo dbtestimage &
+	docker run --network=$NETWORK_NAME --name $MONGO_CONTAINER_NAME -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=root -h $MONGO_CONTAINER_NAME dbtestimage &
 }
 
 function launchCore() {
