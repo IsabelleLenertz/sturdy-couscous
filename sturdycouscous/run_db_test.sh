@@ -20,8 +20,7 @@ function launchCore() {
 function clearAll() {
 	docker rm -f testc
 	docker rm -f mongotest
-	docker image rm -f dbtestimage
-	docker image rm -f sturdy-couscous
+	docker volume rm $(docker volume ls -qf dangling=true)
 }
 
 makeNetwork
