@@ -2,6 +2,8 @@
 # Run this from the current directory for ideal results
 
 NETWORK_NAME=db_default
+CORE_CONTAINER_NAME=garbanzocore
+MONGO_CONTAINER_NAME=garbanzomongo
 
 function makeNetwork() {
 	docker network create $NETWORK_NAME 
@@ -9,21 +11,21 @@ function makeNetwork() {
 
 function launchMongo() {
 	docker build -t dbtestimage $PWD/db/.
-	docker run --network=$NETWORK_NAME --name mongotest  -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=root -h py-mongo dbtestimage &
+	docker run --network=$NETWORK_NAME --name $MONGO_CONTAINER_NAME -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=root -h py-mongo dbtestimage &
 }
 
 function launchCore() {
 	docker build -t sturdy-couscous $PWD/Garbanzo/.
-	docker run --network=$NETWORK_NAME --name testc --link mongotest sturdy-couscous
+	docker run --network=$NETWORK_NAME --name $CORE_CONTAINER_NAME --link $MONGO_CONTAINER_NAME sturdy-couscous
 }
 
-function clearAll() {
-	docker rm -f testc
-	docker rm -f mongotest
+function cleanUp() {
+	docker rm -f $CORE_CONTAINER_NAME
+	docker rm -f $MONGO_CONTAINER_NAME
 	docker volume rm $(docker volume ls -qf dangling=true)
 }
 
 makeNetwork
 launchMongo
 launchCore
-clearAll
+cleanUp

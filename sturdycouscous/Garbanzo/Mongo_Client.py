@@ -1,9 +1,8 @@
 from pymongo import MongoClient, errors
 
-DOMAIN = 'mongotest'
+DOMAIN = 'garbanzomongo'
 PORT = 27017
-
-database_names=[]
+DB_NAME = "garbanzodb"
 
 def connect_client():
     try:
@@ -19,14 +18,10 @@ def connect_client():
         print("pymongo ERROR: ", err)
         return None
         
-def create_db(client):
-    db = client["garbanzodb"]
+client = connect_client()
+db = client["garbanzodb"]
 
-c = connect_client()
-create_db(c)
-
-if c:
-    create_db(c)
-    c.list_database_names()
+if client:
+    database_names=client.list_database_names()
 print ("\ndatabases:", database_names)
 
