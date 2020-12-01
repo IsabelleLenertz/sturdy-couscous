@@ -1,7 +1,8 @@
 from logging import ERROR
 from bs4 import BeautifulSoup
 import requests
-from sturdycouscous.bouneschlupp import errors
+#from sturdycouscous.bouneschlupp import errors
+from . import errors
 import logging as log
 class Parser:
     """ Prases an HTML page and extracts data such a child-links
