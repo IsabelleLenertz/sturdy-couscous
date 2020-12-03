@@ -13,7 +13,7 @@ class connection_checker():
 	# Returns list of open ports.
 	def port_checker(self, domain):
 
-		port_list = [20, 21, 22, 23, 25, 53, 69, 67, 80, 110, 119, 123, 143, 161, 162, 389, 443, 445, 514, 554, 636, 1720, 3389, 5060, 5061]
+		port_list = [20, 21, 69, 80, 123, 8080, 389]
 		ports_open = []
 
 		for port in port_list:

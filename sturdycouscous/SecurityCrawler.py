@@ -2,18 +2,15 @@ from Garbanzo import Checker, DomainInfo
 from bouneschlupp import parser
 import pandas as pd 
 import re
-# Driver for Checker interface.
+import threading
 
-# More random notes -- need to check certificate first.
-# The connections will all fail if the certificate isn't trusted or valid.
-# And I'm too lazy to put in try/catch blocks.
-
-# another big note: domain names should NOT include the http or the www part.
+# Driver for Checker & Classifier interface.
 
 class security_crawler():
 
 	def __init__(self):
 		
+		self.raw_history = set()
 		self.sites_to_visit = set()	
 		self.domain_infos = set()
 		self.red_list = set()
@@ -26,45 +23,19 @@ class security_crawler():
 		
 		for indx, row in df.iterrows():
 			url = row['url']
-			if url not in unique_history:
-				unique_history.add(url)
-				self.sites_to_visit.add(self.grab_domain_name(url))
+			if url not in self.raw_history:
+				self.raw_history.add(url)
+				self.sites_to_visit.add(url)
 
-		return unique_history
-
-	def add_children_to_visit(self, unique_history):
+	def add_children_to_visit(self):
 		# create "parser" objects for each of the urls.
 
-		for link in unique_history:
+		for link in self.raw_history:
 			p = parser.Parser(link)
 			children = p.get_links_from_child_pages()
 
 			for child in children:
-				self.sites_to_visit.add(self.grab_domain_name(child))
-
-
-	def tls_analysis(self):
-
-		c = Checker.connection_checker()
-
-		for domain in self.sites_to_visit:
-			# print(domain)
-			d = DomainInfo.domain_info(domain)
-			
-			d.valid_cert = c.certificate_checker(domain)
-
-			# d.ports_open = c.port_checker(domain)
-			# print("got ports open")
-
-			d.tls_versions_supported = c.tls_versions_checker(domain)
-		
-			d.ciphers_supported = c.get_supported_ciphers(domain, d.tls_versions_supported)
-			
-			self.domain_infos.add(d)
-
-			# redlist websites supporting tls v1 and v1.1
-			if ('TLSv1.1' in d.tls_versions_supported) or ('TLSv1.0' in d.tls_versions_supported):
-				self.red_list.add(domain)
+				self.sites_to_visit.add(url)
 
 
 	def grab_domain_name(self, url):
@@ -84,16 +55,79 @@ class security_crawler():
 		return domain_name
 
 
-	def crawl(self):
-		history = self.get_history(filename="embarrassing_history.csv")
-		print(history)
-		self.add_children_to_visit(history)	# passing history in just in case there are more links to other sites on these pages.
-		print(self.sites_to_visit)	# full list of top-level domains to get info on.
+	# Return the "Checker" json part.
+	def checker_analysis(self, url):
 
-		self.tls_analysis()
+		c = Checker.connection_checker()
+		domain = self.grab_domain_name(url)
 
-		for domain in self.domain_infos:
-			print(domain.export_json())
+		valid_cert = c.certificate_checker(domain)
+		ports_open = c.port_checker(domain)
+		tls_versions_supported = c.tls_versions_checker(domain)
+		ciphers_supported = c.get_supported_ciphers(domain, d.tls_versions_supported)
+
+		# redlist websites supporting tls v1 and v1.1
+		if ('TLSv1.1' in tls_versions_supported) or ('TLSv1.0' in tls_versions_supported):
+			self.red_list.add(url)
+
+		# redlist insecure requests..?
+		if "https" not in url:
+			self.red_list.add(url)
+
+		return valid_cert, ports_open, tls_versions_supported, ciphers_supported			
+
+
+	# The thread function.
+	def crawl_url(self, url):
+
+		d = DomainInfo(url, self.grab_domain_name(url))
+
+		# call results from connection checker
+		valid_cert, ports_open, tls_versions_supported, ciphers_supported = self.checker_analysis(url)
+		d.valid_cert = valid_cert
+		d.ports_open = ports_open
+		d.tls_versions_supported = tls_versions_supported
+		d.ciphers_supported = ciphers_supported
+
+		# get results from classifier..
+		# << don't know how that will work yet >>
+
+		# output to mongo -- look at robby's code.
+
+		self.domain_infos.add(d)
+
+
+	def new_crawl(self):
+
+		# obtain first level of history
+		# then add children to visit from first level of history.
+		self.get_history(filename="history/embarrassing_history.csv")
+		self.add_children_to_visit()
+
+		threads = len(self.sites_to_visit)
+		running_threads = []		
+
+		# start each thread
+		for url in self.sites_to_visit:
+			t = threading.Thread(target=crawl_url, args=(self, url))
+			t.start()
+			running_threads.append(t)
+
+		# joining threads
+		for t in running_threads:
+			t.join()
+
+
+	# def crawl(self):
+	# 	history = self.get_history(filename="embarrassing_history.csv")
+	# 	print(history)
+	# 	self.add_children_to_visit(history)	# passing history in just in case there are more links to other sites on these pages.
+	# 	print(self.sites_to_visit)	# full list of top-level domains to get info on.
+
+	# 	self.tls_analysis()
+
+	# 	for domain in self.domain_infos:
+	# 		print(domain.export_json())
 
 
 if __name__ == "__main__":
