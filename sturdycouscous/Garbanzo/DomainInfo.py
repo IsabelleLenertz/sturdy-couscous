@@ -2,9 +2,9 @@
 
 class domain_info():
 
-	def __init__(self, url, domain):
+	def __init__(self, url):
 		# Provided by Security Crawler
-		self.domain = domain
+		self.domain = ""
 		self.url = url
 
 		self.title = "" # for "habitat classifier" purposes
@@ -22,8 +22,7 @@ class domain_info():
 
 
 	def export_json(self):
-		json_obj = 
-		{
+		json_obj = {
 			"URL": self.url,
 			"Title": self.title,
 			"Domain": self.domain,

@@ -2,11 +2,10 @@ from Garbanzo import Checker, DomainInfo
 from bouneschlupp import parser
 import pandas as pd 
 import re
-import threading
-
+from threading import Thread
 # Driver for Checker & Classifier interface.
 
-class security_crawler():
+class security_crawler(Thread):
 
 	def __init__(self):
 		
@@ -80,25 +79,33 @@ class security_crawler():
 	# The thread function.
 	def crawl_url(self, url):
 
-		d = DomainInfo(url, self.grab_domain_name(url))
+		c = Checker.connection_checker()
+		d = DomainInfo.domain_info(url)
+
+		domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
+		print(domain)
+
+		if red_list:
+			self.sites_to_visit.add(url)
+		
+		print("done!")
+		# d = DomainInfo(url, self.grab_domain_name(url))
 
 		# call results from connection checker
-		valid_cert, ports_open, tls_versions_supported, ciphers_supported = self.checker_analysis(url)
-		d.valid_cert = valid_cert
-		d.ports_open = ports_open
-		d.tls_versions_supported = tls_versions_supported
-		d.ciphers_supported = ciphers_supported
+		# valid_cert, ports_open, tls_versions_supported, ciphers_supported = self.checker_analysis(url)
+		# d.valid_cert = valid_cert
+		# d.ports_open = ports_open
+		# d.tls_versions_supported = tls_versions_supported
+		# d.ciphers_supported = ciphers_supported
 
 		# get results from classifier..
 		# << don't know how that will work yet >>
 
 		# output to mongo -- look at robby's code.
+		# print(d.export_json())
+		# self.domain_infos.add(d)
 
-		self.domain_infos.add(d)
-
-
-	def new_crawl(self):
-
+	def run(self):
 		# obtain first level of history
 		# then add children to visit from first level of history.
 		self.get_history(filename="history/embarrassing_history.csv")
@@ -109,8 +116,9 @@ class security_crawler():
 
 		# start each thread
 		for url in self.sites_to_visit:
-			t = threading.Thread(target=crawl_url, args=(self, url))
+			t = Thread(target=self.crawl_url, args=(url,))
 			t.start()
+			print("Thread " + str(t) + " started")
 			running_threads.append(t)
 
 		# joining threads
@@ -132,6 +140,6 @@ class security_crawler():
 
 if __name__ == "__main__":
 	sc = security_crawler()
-	sc.crawl()
+	sc.run()
 
 
