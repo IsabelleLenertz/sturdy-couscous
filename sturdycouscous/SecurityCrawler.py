@@ -36,46 +36,6 @@ class security_crawler(Thread):
 			for child in children:
 				self.sites_to_visit.add(url)
 
-
-	def grab_domain_name(self, url):
-		
-		common_tlds = ['com', 'net', 'org', 'edu', 'gov']
-		url_split = re.split('\.|/', url)
-		
-		tld_indx = 0
-		domain_name = ""
-
-		for i in range(len(url_split)):
-			if url_split[i] in common_tlds:
-				tld_indx = i
-				break
-
-		domain_name = url_split[tld_indx-1] + "." + url_split[tld_indx]
-		return domain_name
-
-
-	# Return the "Checker" json part.
-	def checker_analysis(self, url):
-
-		c = Checker.connection_checker()
-		domain = self.grab_domain_name(url)
-
-		valid_cert = c.certificate_checker(domain)
-		ports_open = c.port_checker(domain)
-		tls_versions_supported = c.tls_versions_checker(domain)
-		ciphers_supported = c.get_supported_ciphers(domain, d.tls_versions_supported)
-
-		# redlist websites supporting tls v1 and v1.1
-		if ('TLSv1.1' in tls_versions_supported) or ('TLSv1.0' in tls_versions_supported):
-			self.red_list.add(url)
-
-		# redlist insecure requests..?
-		if "https" not in url:
-			self.red_list.add(url)
-
-		return valid_cert, ports_open, tls_versions_supported, ciphers_supported			
-
-
 	# The thread function.
 	def crawl_url(self, url):
 
@@ -88,22 +48,20 @@ class security_crawler(Thread):
 		if red_list:
 			self.sites_to_visit.add(url)
 		
-		print("done!")
-		# d = DomainInfo(url, self.grab_domain_name(url))
+		d.domain = domain
+		d.valid_cert = valid_cert
+		d.ports_open = ports_open
+		d.tls_versions_supported = tls_versions_supported
+		d.ciphers_supported = ciphers_supported
 
-		# call results from connection checker
-		# valid_cert, ports_open, tls_versions_supported, ciphers_supported = self.checker_analysis(url)
-		# d.valid_cert = valid_cert
-		# d.ports_open = ports_open
-		# d.tls_versions_supported = tls_versions_supported
-		# d.ciphers_supported = ciphers_supported
+		print(d.export_json())
+		self.domain_infos.add(d)
 
 		# get results from classifier..
 		# << don't know how that will work yet >>
 
-		# output to mongo -- look at robby's code.
-		# print(d.export_json())
-		# self.domain_infos.add(d)
+		# output to mongo 
+
 
 	def run(self):
 		# obtain first level of history
@@ -124,19 +82,6 @@ class security_crawler(Thread):
 		# joining threads
 		for t in running_threads:
 			t.join()
-
-
-	# def crawl(self):
-	# 	history = self.get_history(filename="embarrassing_history.csv")
-	# 	print(history)
-	# 	self.add_children_to_visit(history)	# passing history in just in case there are more links to other sites on these pages.
-	# 	print(self.sites_to_visit)	# full list of top-level domains to get info on.
-
-	# 	self.tls_analysis()
-
-	# 	for domain in self.domain_infos:
-	# 		print(domain.export_json())
-
 
 if __name__ == "__main__":
 	sc = security_crawler()
