@@ -11,7 +11,6 @@ from datetime import datetime
 
 class connection_checker():
 
-
 	# Copied over from Security Crawler.
 
 	def grab_domain_name(self, url):

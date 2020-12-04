@@ -43,5 +43,4 @@ class domain_info():
 
 		}
 
-
 		return json_obj
