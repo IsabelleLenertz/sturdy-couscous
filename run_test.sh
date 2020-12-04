@@ -19,7 +19,7 @@ function launchMongo() {
 
 function launchCore() {
 	docker build -t $CORE_IMAGE_TAG $PWD/sturdycouscous/
-	docker run -v $PWD/sturdycouscous:/usr/src/app --network=$NETWORK_NAME --name $CORE_CONTAINER_NAME --link $MONGO_CONTAINER_NAME $CORE_IMAGE_TAG
+	docker run -v $PWD/:/usr/src/app --network=$NETWORK_NAME --name $CORE_CONTAINER_NAME --link $MONGO_CONTAINER_NAME $CORE_IMAGE_TAG
 }
 
 function cleanUp() {

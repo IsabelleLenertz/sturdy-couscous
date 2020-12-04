@@ -40,8 +40,9 @@ mock_tls_check = {
         "tag":"testtag1",
         }
     }
-
+print("******************TEST MONGO OUTPUT START******************")
 print(insert(mock_tls_check))
+print("******************TEST MONGO OUTPUT END********************")
 
 # Check DB read
 for each in column.find():
