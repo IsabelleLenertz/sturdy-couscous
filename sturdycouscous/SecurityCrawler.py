@@ -1,8 +1,15 @@
 from Garbanzo import Checker, DomainInfo
 from bouneschlupp import parser
 import pandas as pd 
-import re
 from threading import Thread
+
+from pymongo import MongoClient, errors
+
+DOMAIN = 'garbanzomongo'
+PORT = 27017
+DB_NAME = "garbanzodb"
+COLUMN_NAME = "tls_checks"
+
 # Driver for Checker & Classifier interface.
 
 class security_crawler(Thread):
@@ -15,7 +22,19 @@ class security_crawler(Thread):
 		self.red_list = set()
 		self.db_client = None
 
-
+	def connect_client(self):
+		try:
+			client = MongoClient(
+				host = [ str(DOMAIN) + ":" + str(PORT) ],
+					serverSelectionTimeoutMS = 3000, # 3 second timeout
+					username = "root",
+					password = "root"
+			)
+			self.db_client = client
+		except errors.ServerSelectionTimeoutError as err:
+			print("pymongo ERROR: ", err)
+			exit(1)
+			
 	def get_history(self, filename):
 		unique_history = set()
 		df = pd.read_csv(filename)
@@ -54,14 +73,19 @@ class security_crawler(Thread):
 		d.tls_versions_supported = tls_versions_supported
 		d.ciphers_supported = ciphers_supported
 
-		print(d.export_json())
+		url_dict = d.export_json()
+		print(url_dict)
 		self.domain_infos.add(d)
 
 		# get results from classifier..
 		# << don't know how that will work yet >>
 
-		# output to mongo 
-
+		# output to mongo
+		# not sure if this works or how this will work in containers
+		# but that's a ~tomorrow~ problem
+		db = self.db_client[DB_NAME]
+		column = db[COLUMN_NAME] 
+		print(column.insert_one(url_dict))
 
 	def run(self):
 		# obtain first level of history
@@ -85,6 +109,7 @@ class security_crawler(Thread):
 
 if __name__ == "__main__":
 	sc = security_crawler()
+	sc.connect_client()
 	sc.run()
 
 
