@@ -1,8 +1,8 @@
 from pymongo import MongoClient, errors
 
-DOMAIN = 'garbanzomongo'
+DOMAIN = 'couscousmongo'
 PORT = 27017
-DB_NAME = "garbanzodb"
+DB_NAME = "couscous_db"
 COLUMN_NAME = "tls_checks"
 
 def connect_client():
