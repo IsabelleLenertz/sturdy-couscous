@@ -31,10 +31,13 @@ class security_crawler(Thread):
 
 		for link in self.raw_history:
 			p = parser.Parser(link)
+			print(link)
 			children = p.get_links_from_child_pages()
 
+
 			for child in children:
-				self.sites_to_visit.add(url)
+				if "http" in child: 
+					self.sites_to_visit.add(child)
 
 	# The thread function.
 	def crawl_url(self, url):
@@ -46,7 +49,7 @@ class security_crawler(Thread):
 		print(domain)
 
 		if red_list:
-			self.sites_to_visit.add(url)
+			self.red_list.add(url)
 		
 		d.domain = domain
 		d.valid_cert = valid_cert
@@ -63,11 +66,45 @@ class security_crawler(Thread):
 
 		# output to mongo
 
+	def stupid_add(self, num):
+		print(str(num + num))
+
+	def sample_run(self):
+		nums = range(5)
+		threads = 5 
+		running_threads = []		
+		
+		for num in nums:
+			t = Thread(target=self.stupid_add, args=(num,))
+			t.start()
+			print("Thread " + str(t) + " started")
+			running_threads.append(t)
+
+		# joining threads
+		for t in running_threads:
+			t.join()
+
+
 	def run(self):
 		# obtain first level of history
 		# then add children to visit from first level of history.
-		self.get_history(filename="history/embarrassing_history.csv")
+		self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
+#		self.get_history(filename="sturdycouscous/history_small.csv")
 		self.add_children_to_visit()
+
+		print(self.sites_to_visit)
+
+		# making the set much smaller.
+		small_set = set()
+		i = 0
+		for item in self.sites_to_visit:
+			if (i >= 4):
+				break
+			small_set.add(item)
+			i += 1	
+
+		self.sites_to_visit = small_set
+		# end the making smaller part.
 
 		threads = len(self.sites_to_visit)
 		running_threads = []		
@@ -81,9 +118,9 @@ class security_crawler(Thread):
 
 		# joining threads
 		for t in running_threads:
-			t.join()
+			t.join() 
 
 if __name__ == "__main__":
 	sc = security_crawler()
-	sc.connect_client()
+#	sc.sample_run()
 	sc.run()

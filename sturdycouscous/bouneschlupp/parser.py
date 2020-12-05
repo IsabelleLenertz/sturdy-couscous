@@ -31,7 +31,8 @@ class Parser:
     def get_links(self):
         children = set()
         for link in self.links:
-            children.add(link.attrs['href'])
+            if 'href' in link.attrs:
+                children.add(link.attrs['href'])
         return children
 
     def get_links_from_child_pages(self):
