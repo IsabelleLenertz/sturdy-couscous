@@ -1,6 +1,9 @@
 # This script runs the composition that connects an instance of the core Garbanzo image to the mongo.db image in the most basic way possible
 # Run this from the current directory for ideal results
 
+
+
+>>>>>>> .merge_file_GxpxCa
 NETWORK_NAME=couscous_net
 
 CORE_IMAGE_TAG=couscous_image
