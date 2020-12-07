@@ -7,7 +7,6 @@ from nltk.corpus import stopwords
 import requests
 import string
 
-
 DOMAIN = 'couscousmongo'
 PORT = 27017
 DB_NAME = "couscous_db"
@@ -27,8 +26,10 @@ def connect_client():
         print("pymongo ERROR: ", err)
         return None
 
-def clean_tokens(text):
-    tokens = word_tokenize(text)
+def clean_tokens(tags):
+    tokens = []
+    for text in tags:
+        tokens.extend(word_tokenize(text))
     tokens = [w.lower() for w in tokens]
     table = str.maketrans('', '', string.punctuation)
     stripped = [w.translate(table) for w in tokens]
@@ -39,6 +40,7 @@ def clean_tokens(text):
     porter = PorterStemmer()
     return [porter.stem(word) for word in words]
 
+
 class Classifier:
     DOMAIN = 'couscousmongo'
     PORT = 27017
@@ -47,35 +49,22 @@ class Classifier:
     USERNAME = "root"
     PASSWORD = "root"
     
-
     def __init__(self, url):
         self.url = url
         
         # First, get the page content and parse into a beautiful tree
         response = requests.get("https://www."+ url.replace('https://', '').replace('www.', ''))
-        text_content = []
         try:
             if response.status_code == 200:
-                content = BeautifulSoup(response.content, 'lxml')
-                
+                self.content = BeautifulSoup(response.content, 'lxml')
                 # Look for the keywords indicated by author
-                metadata = content.head.find("meta", attrs = {'name':'keywords'})
-                if not metadata: 
-                    metadata = content.head.find("meta", attrs = {'name':'Keywords'})
-                if metadata:
-                    text_content = clean_tokens(metadata.get('content'))
-    
-                # Look for description and extracts keywords
-                description_tag = content.head.find("meta", attrs = {'name':'description'})
-                if not description_tag:
-                    description_tag = content.head.find("meta", attrs = {'name':'Description'})
-                if description_tag:
-                    text_content = clean_tokens(description_tag.get('content'))
+                self.page_content = clean_tokens(self.content.findAll(text=True))
             else:
                 print(response.status_code, ": ", response.reason)
-                raise Exception()
+                raise Exception(response.status_code + response.reason)
         except BaseException as e:
             print(type(e))
+            raise e
         # Extract and normalized keywords from <head>
         evaluation = {}
         # Count keywords in each category
@@ -86,10 +75,16 @@ class Classifier:
         for category in CATEGORIES:
             category_keywords = collection.find_one({'_id': category}).get('keywords')
             counter = 0
-            for word in text_content:
+            for word in self.page_content:
                 if word in category_keywords:
                     counter += 1 
             evaluation[category] = counter
         
         # Returns the category with the highest score
-        self.classification = evaluation
+        self.classification = {
+            'categories': [max(evaluation.keys(), key=(lambda k: evaluation[k]))],
+            'data': evaluation
+        }
+
+c = Classifier("github.com")
+print(c.classification)
