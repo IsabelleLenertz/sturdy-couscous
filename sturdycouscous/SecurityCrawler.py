@@ -92,7 +92,7 @@ class security_crawler(Thread):
 		# then add children to visit from first level of history.
 		# self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
 		self.get_history(filename="sturdycouscous/history/history_medium.csv")
-		# self.add_children_to_visit()
+		self.add_children_to_visit()
 
 		# making the set much smaller.
 		small_set = set()

@@ -22,7 +22,7 @@ class Printer():
             write_to_file(record.dump_dict())
 
     def print_record_count(self):
-        pass
+        return len(self.dump_fields({'_id'}))
 
 
     def tally_tls_versions(self):
@@ -54,6 +54,7 @@ class Printer():
         tls_tally = str(self.tally_tls_versions())
 
         self.outputfile.writelines(Printer.header())
+        self.outputfile.writelines("Record count: " + str(self.print_record_count()) + '\n')
         self.outputfile.writelines(tls_tally)
         self.outputfile.write('\n')
         self.outputfile.close()
