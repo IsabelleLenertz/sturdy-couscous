@@ -13,8 +13,6 @@ class TLS_Record(object):
         if type(input_dict) != dict:
             print("Error: input must be a dict mapped to TLS_Record attributes")
             return 0
-        print("\n*** input_dict: " )
-        print(input_dict)
         self.URL = input_dict['URL']
         self.Title = input_dict['Title']
         self.Domain = input_dict['Domain']

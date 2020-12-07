@@ -146,3 +146,4 @@ sturdycouscous/db/mongo/data/
 .gitconfig
 
 .bash_history
+*output.txt

@@ -1,5 +1,6 @@
 from Mongo_Client import DBClient
 from models import TLS_Record
+import collections
 
 class Printer():
     def __init__(self):
@@ -28,36 +29,57 @@ class Printer():
     def tally_tls_versions(self):
         tally = {}
         query_filter = {'Checker.tls_versions_supported', 'Checker.ciphers_supported'}
+
+        # Retrieve data and tally results
         for row in self.dump_fields(query_filter):
-            print(row)
             versionlist = row['Checker']['tls_versions_supported']
             for version in versionlist:
                 if version not in tally:
                     tally[version] = {'count': 1}
                 else:
                     tally[version]['count'] += 1
-        return(tally)
+
+        # Build output string
+        tally_output = 'SSL Version Tally:\n'
+        for result in tally:
+            tally_output += "{0:8} {1}\n".format(result + ":", str(tally[result]['count']))
+        return(tally_output)
 
     def tally_top_domains(self, count=10):
         tally = {}
         query_filter = {'Domain'}
-        print(self.dump_fields(query_filter))
+        
+        # Retrieve data and tally results
         for row in self.dump_fields(query_filter):
             domain = row['Domain']
             if domain not in tally:
                 tally[domain] = 1
             else:
                 tally[domain] += 1
-        print(tally)
+        sorted_tally = sorted(tally.items(), key=lambda x:x[1], reverse=True)
+
+        # Build output string
+        tally_output = 'Top 10 visited Domains:\n'
+        for rank in range(0, min(len(sorted_tally), 10)):
+            row = sorted_tally[rank]
+            tally_output += "{0:20} {1}\n".format(row[0] + ":", row[1])
+        return tally_output
+
 
     def output_report(self):
-        tls_tally = str(self.tally_tls_versions())
-
-        self.outputfile.writelines(Printer.header())
-        self.outputfile.writelines("Record count: " + str(self.print_record_count()) + '\n')
-        self.outputfile.writelines(tls_tally)
-        self.outputfile.write('\n')
-        self.outputfile.close()
+        padding = '\n' * 1
+        tls_tally = self.tally_tls_versions()
+        domain_tally = self.tally_top_domains()
+        outfile = self.outputfile
+        outfile.writelines(Printer.header())
+        outfile.writelines(padding)
+        outfile.writelines("Record count: " + str(self.print_record_count()) + '\n')
+        outfile.writelines(padding)
+        outfile.writelines(tls_tally)
+        outfile.writelines(padding)
+        outfile.writelines(domain_tally)
+        outfile.write('\n')
+        outfile.close()
         print("************************ REPORT WRITTEN TO output.txt *************************")
 
 
