@@ -91,20 +91,7 @@ class security_crawler(Thread):
 		self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
 #		self.get_history(filename="sturdycouscous/history_small.csv")
 		self.add_children_to_visit()
-
 		print(self.sites_to_visit)
-
-		# making the set much smaller.
-		small_set = set()
-		i = 0
-		for item in self.sites_to_visit:
-			if (i >= 4):
-				break
-			small_set.add(item)
-			i += 1	
-
-		self.sites_to_visit = small_set
-		# end the making smaller part.
 
 		threads = len(self.sites_to_visit)
 		running_threads = []		
