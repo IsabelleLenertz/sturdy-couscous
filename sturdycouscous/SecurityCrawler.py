@@ -1,5 +1,5 @@
 from Garbanzo import Checker, DomainInfo
-from bouneschlupp import parser
+from bouneschlupp import parser, Classifier
 import pandas as pd 
 from threading import Thread
 
@@ -42,6 +42,9 @@ class security_crawler(Thread):
 	# The thread function.
 	def crawl_url(self, url):
 
+		categories = {'IT': 4, 'government': 1, 'education': 2, 'news': 5, 'other': 9, 'commerce': 3, 'social-media': 2}
+		reverse_categories = {cat[1]: cat[0] for cat in categories.items()}
+
 		c = Checker.connection_checker()
 		d = DomainInfo.domain_info(url)
 
@@ -57,11 +60,17 @@ class security_crawler(Thread):
 		d.tls_versions_supported = tls_versions_supported
 		d.ciphers_supported = ciphers_supported
 
+		# get results from classifier..
+		category = Classifier.Classifier(url).classification
+		print(category)
+		
+		# d.categories.append(reverse_categories[category])
+	
 		url_dict = d.export_json()
 		print(url_dict)
 		self.domain_infos.add(d)
 
-		# get results from classifier..
+	
 		# << don't know how that will work yet >>
 
 		# output to mongo
@@ -89,7 +98,6 @@ class security_crawler(Thread):
 		# obtain first level of history
 		# then add children to visit from first level of history.
 		self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
-#		self.get_history(filename="sturdycouscous/history_small.csv")
 		self.add_children_to_visit()
 		print(self.sites_to_visit)
 
