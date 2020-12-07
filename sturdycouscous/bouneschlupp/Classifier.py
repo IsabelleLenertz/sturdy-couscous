@@ -9,7 +9,8 @@ from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
 import requests
 import string
-from Garbanzo import domain_info
+import tldextract
+import regex as re
 
 DOMAIN = 'couscousmongo'
 PORT = 27017
@@ -17,6 +18,10 @@ DB_NAME = "couscous_db"
 COLLECTION = "Categories"
 CATEGORIES = ['IT', 'government', 'education', 'news', 'other', 'commerce', 'social-media']
 TAGS = ["body", 'title', 'h1', 'p', 'q', 'a', 'blockquote', 'imgsrc', 'map', 'table', 'tr', 'th', 'td', 'caption', 'base']
+TLD_MAPPING = {
+    'edu': 'education',
+    'gov': 'government'
+}
 
 def connect_client():
     try:
@@ -33,8 +38,8 @@ def connect_client():
 
 def clean_tokens(tags):
     tokens = []
-    for text in tags:
-        tokens.extend(word_tokenize(text))
+    for tag in tags:
+        tokens.extend(word_tokenize(str(tag.string)))
     tokens = [w.lower() for w in tokens]
     table = str.maketrans('', '', string.punctuation)
     stripped = [w.translate(table) for w in tokens]
@@ -53,7 +58,7 @@ class Classifier:
     COLUMN_NAME = "tls_checks"
     USERNAME = "root"
     PASSWORD = "root"
-    TAGS = ["body", 'title', 'h1', 'p', 'q', 'a', 'blockquote', 'imgsrc', 'map', 'table', 'tr', 'th', 'td', 'caption', 'base']
+    TAG_FILTER = re.compile("meta|title|h1|p|q|a|blockquote|imgsrc|map|table|tr|th|td|caption|base")
 
     def __init__(self, url):
         self.url = url
@@ -64,7 +69,7 @@ class Classifier:
             if response.status_code == 200:
                 self.content = BeautifulSoup(response.content, 'lxml')
                 # Look for the keywords indicated by author
-                self.page_content = clean_tokens(self.content.findAll(text=True))
+                self.page_content = clean_tokens(self.content.findAll(self.TAG_FILTER))
             else:
                 print(response.status_code, ": ", response.reason)
                 raise Exception(response.status_code + response.reason)
@@ -83,17 +88,18 @@ class Classifier:
             for word in self.page_content:
                 if word in category_keywords:
                     counter += category_keywords[word] 
-            evaluation[category] = counter/len(self.page_content)*100
+            evaluation[category] = counter #/len(self.page_content)*100
 
-        # Use url features
-
-
-        # Returns the category with the highest score
+        # Returns the category with the highest sco
+        tld = tldextract.extract(self.url)
         evaluation["other"] = evaluation['other']/3
+        categories = [max(evaluation.keys(), key=(lambda k: evaluation[k]))]
+        if tld.suffix in TLD_MAPPING and TLD_MAPPING[tld.suffix] not in categories:
+            categories.append(TLD_MAPPING[tld.suffix])
         self.classification = {
-            'categories': [max(evaluation.keys(), key=(lambda k: evaluation[k]))],
+            'categories': categories,
             'data': evaluation
         }
 
-c = Classifier("https://matix.io/extract-text-from-webpage-using-beautifulsoup-and-python/")
+c = Classifier("berkeley.edu")
 print(c.classification)
