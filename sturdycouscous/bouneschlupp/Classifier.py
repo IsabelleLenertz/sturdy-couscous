@@ -88,8 +88,7 @@ class Classifier:
             for word in self.page_content:
                 if word in category_keywords:
                     counter += category_keywords[word] 
-            evaluation[category] = counter #/len(self.page_content)*100
-
+            evaluation[category] = counter/len(self.page_content)*100
         # Returns the category with the highest sco
         tld = tldextract.extract(self.url)
         evaluation["other"] = evaluation['other']/3
