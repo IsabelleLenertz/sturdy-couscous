@@ -9,18 +9,13 @@
     <img alt="   ">"""
 
 import csv
-from mongoengine.errors import DoesNotExist
-from mongoengine.queryset.transform import query
 import requests
-import errors
 from bs4 import BeautifulSoup
-import pprint
 from nltk.tokenize import word_tokenize
 from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
 import string
 import json
-
 from pymongo import MongoClient, errors
 
 DOMAIN = 'couscousmongo'
@@ -42,11 +37,12 @@ def connect_client():
         return None
 
 def update_db(category, collection, key_words):
-    current_set = collection.find_one({'id' : category})
-    if current_set == None:
-        collection.insert({ 'id' : category, 'keywords' : key_words})
+    current_category = collection.find_one({'_id' : category})
+    if current_category == None:
+        collection.insert_one({ '_id' : category, 'keywords' : list(key_words)})
     else:
-        return collection.update_one({'id' : category}, {'$addToSet': { 'keywords': current_set.union(key_words) }})
+        current_set = set(current_category.get('keywords'))
+        collection.update_one({'_id' : category}, {'$set': { 'keywords': list(key_words.union(current_set)) }})
    
 def clean_tokens(text):
     tokens = word_tokenize(text)
@@ -79,7 +75,7 @@ with open("sturdycouscous/resources/keyword_training.csv") as csvfile:
                 if not metadata: 
                     metadata = content.head.find("meta", attrs = {'name':'Keywords'})
                 if metadata:
-                    key_words = clean_tokens(metadata.get('content'))
+                    key_words = set(clean_tokens(metadata.get('content')))
                     update_db(row[1], collection, key_words)
                 
                 # Look for description and extracts keywords
@@ -87,11 +83,11 @@ with open("sturdycouscous/resources/keyword_training.csv") as csvfile:
                 if not description_tag:
                     description_tag = content.head.find("meta", attrs = {'name':'Description'})
                 if description_tag:
-                    key_words = clean_tokens(description_tag.get('content'))
+                    key_words = set(clean_tokens(description_tag.get('content')))
                     update_db(row[1], collection, key_words) 
             else:
                 print(response.status_code, ": ", response.reason)
-                raise errors.BadResponseError(response.status_code)
+                raise Exception()
         except BaseException as e:
             print(type(e))
 

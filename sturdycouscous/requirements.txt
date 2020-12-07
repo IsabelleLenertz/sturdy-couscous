@@ -41,6 +41,5 @@ attrs==20.3.0
 async-timeout==3.0.1
 aioredis==1.3.1
 unittest
-nose
-nltk
-mongoengine
+nose==1.3.7
+nltk==3.5
