@@ -36,13 +36,25 @@ def connect_client():
         print("pymongo ERROR: ", err)
         return None
 
+'''
+{
+    _id: "IT"
+    keywords: {word2: 3}, {word2:1}
+}
+'''
 def update_db(category, collection, key_words):
     current_category = collection.find_one({'_id' : category})
     if current_category == None:
-        collection.insert_one({ '_id' : category, 'keywords' : list(key_words)})
+        weighted_keywords = {}
+        for word in key_words:
+            weighted_keywords[word] = weighted_keywords.get(word, 0) + 1
+        collection.insert_one({ '_id' : category, 'keywords' : weighted_keywords})
     else:
-        current_set = set(current_category.get('keywords'))
-        collection.update_one({'_id' : category}, {'$set': { 'keywords': list(key_words.union(current_set)) }})
+        current_dic = current_category.get('keywords')
+        weighted_keywords = {}
+        for word in key_words:
+            weighted_keywords[word] = current_dic.get(word, 0) + 1
+        collection.update_one({'_id' : category}, {'$set': { 'keywords': weighted_keywords }})
    
 def clean_tokens(text):
     tokens = word_tokenize(text)
@@ -59,6 +71,7 @@ def clean_tokens(text):
 client = connect_client()
 db = client[DB_NAME]
 collection = db[COLLECTION]
+collection.drop()
 
 with open("sturdycouscous/resources/keyword_training.csv") as csvfile:
     training_sample = csv.reader(csvfile, delimiter=',')
@@ -75,7 +88,7 @@ with open("sturdycouscous/resources/keyword_training.csv") as csvfile:
                 if not metadata: 
                     metadata = content.head.find("meta", attrs = {'name':'Keywords'})
                 if metadata:
-                    key_words = set(clean_tokens(metadata.get('content')))
+                    key_words = clean_tokens(metadata.get('content'))
                     update_db(row[1], collection, key_words)
                 
                 # Look for description and extracts keywords
@@ -83,7 +96,7 @@ with open("sturdycouscous/resources/keyword_training.csv") as csvfile:
                 if not description_tag:
                     description_tag = content.head.find("meta", attrs = {'name':'Description'})
                 if description_tag:
-                    key_words = set(clean_tokens(description_tag.get('content')))
+                    key_words = clean_tokens(description_tag.get('content'))
                     update_db(row[1], collection, key_words) 
             else:
                 print(response.status_code, ": ", response.reason)

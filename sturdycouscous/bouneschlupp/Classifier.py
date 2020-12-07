@@ -1,3 +1,6 @@
+import sys
+sys.path.append("./sturdycouscous")
+
 from enum import Enum
 from bs4 import BeautifulSoup
 from pymongo import MongoClient, errors, results
@@ -6,12 +9,14 @@ from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
 import requests
 import string
+from Garbanzo import domain_info
 
 DOMAIN = 'couscousmongo'
 PORT = 27017
 DB_NAME = "couscous_db"
 COLLECTION = "Categories"
 CATEGORIES = ['IT', 'government', 'education', 'news', 'other', 'commerce', 'social-media']
+TAGS = ["body", 'title', 'h1', 'p', 'q', 'a', 'blockquote', 'imgsrc', 'map', 'table', 'tr', 'th', 'td', 'caption', 'base']
 
 def connect_client():
     try:
@@ -48,7 +53,8 @@ class Classifier:
     COLUMN_NAME = "tls_checks"
     USERNAME = "root"
     PASSWORD = "root"
-    
+    TAGS = ["body", 'title', 'h1', 'p', 'q', 'a', 'blockquote', 'imgsrc', 'map', 'table', 'tr', 'th', 'td', 'caption', 'base']
+
     def __init__(self, url):
         self.url = url
         
@@ -71,20 +77,23 @@ class Classifier:
         client = connect_client()
         db = client[DB_NAME]
         collection = db[COLLECTION]
-        categories = collection.find()
         for category in CATEGORIES:
             category_keywords = collection.find_one({'_id': category}).get('keywords')
             counter = 0
             for word in self.page_content:
                 if word in category_keywords:
-                    counter += 1 
-            evaluation[category] = counter
-        
+                    counter += category_keywords[word] 
+            evaluation[category] = counter/len(self.page_content)*100
+
+        # Use url features
+
+
         # Returns the category with the highest score
+        evaluation["other"] = evaluation['other']/3
         self.classification = {
             'categories': [max(evaluation.keys(), key=(lambda k: evaluation[k]))],
             'data': evaluation
         }
 
-c = Classifier("github.com")
+c = Classifier("https://matix.io/extract-text-from-webpage-using-beautifulsoup-and-python/")
 print(c.classification)
