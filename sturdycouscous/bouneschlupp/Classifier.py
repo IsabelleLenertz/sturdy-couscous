@@ -1,9 +1,12 @@
 from enum import Enum
 from bs4 import BeautifulSoup
-from pymongo import MongoClient, errors
+from pymongo import MongoClient, errors, results
 from nltk.tokenize import word_tokenize
 from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
+import requests
+import string
+
 
 DOMAIN = 'couscousmongo'
 PORT = 27017
@@ -43,13 +46,37 @@ class Classifier:
     COLUMN_NAME = "tls_checks"
     USERNAME = "root"
     PASSWORD = "root"
+    
+
     def __init__(self, url):
         self.url = url
         
         # First, get the page content and parse into a beautiful tree
-        
+        response = requests.get("https://www."+ url.replace('https://', '').replace('www.', ''))
+        text_content = []
+        try:
+            if response.status_code == 200:
+                content = BeautifulSoup(response.content, 'lxml')
+                
+                # Look for the keywords indicated by author
+                metadata = content.head.find("meta", attrs = {'name':'keywords'})
+                if not metadata: 
+                    metadata = content.head.find("meta", attrs = {'name':'Keywords'})
+                if metadata:
+                    text_content = clean_tokens(metadata.get('content'))
+    
+                # Look for description and extracts keywords
+                description_tag = content.head.find("meta", attrs = {'name':'description'})
+                if not description_tag:
+                    description_tag = content.head.find("meta", attrs = {'name':'Description'})
+                if description_tag:
+                    text_content = clean_tokens(description_tag.get('content'))
+            else:
+                print(response.status_code, ": ", response.reason)
+                raise Exception()
+        except BaseException as e:
+            print(type(e))
         # Extract and normalized keywords from <head>
-        keywords = None
         evaluation = {}
         # Count keywords in each category
         client = connect_client()
@@ -57,11 +84,12 @@ class Classifier:
         collection = db[COLLECTION]
         categories = collection.find()
         for category in CATEGORIES:
-            category_keywords = collection.find({'_id': category}).get('keywords')
+            category_keywords = collection.find_one({'_id': category}).get('keywords')
             counter = 0
-            for word in keywords:
+            for word in text_content:
                 if word in category_keywords:
                     counter += 1 
-            evaluation.insert(category.id, counter)
+            evaluation[category] = counter
         
         # Returns the category with the highest score
+        self.classification = evaluation
