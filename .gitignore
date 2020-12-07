@@ -140,6 +140,9 @@ sturdycouscous/db/mongo/data/
 .kite/
 .local/
 .vs-liveshare-keychain
+.vscode
 
 #git stuff
 .gitconfig
+
+.bash_history

@@ -8,7 +8,12 @@ class Category(me.Document):
     id = me.StringField(required=True, unique = True, primary_key = True)
     keywords = me.ListField(field = me.StringField(), required=True)
 class Classifier:
-
+    DOMAIN = 'couscousmongo'
+    PORT = 27017
+    DB_NAME = "couscous_db"
+    COLUMN_NAME = "tls_checks"
+    USERNAME = "root"
+    PASSWORD = "root"
     def __init__(self, url):
         self.url = url
         
@@ -18,7 +23,13 @@ class Classifier:
         keywords = None
         evaluation = {}
         # Count keywords in each category
-        me.connect('classifier_training_set', host='sss', port = 2222)
+        me.connect(username=self.USERNAME, 
+           password=self.PASSWORD, 
+           port=self.PORT, 
+           host=self.DOMAIN, 
+           authentication_source='admin',
+           db=self.DB_NAME)
+
         for category in Category.objects:
             counter = 0;
             for word in keywords:
