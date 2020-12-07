@@ -133,3 +133,16 @@ dmypy.json
 
 # Mongo stuff
 sturdycouscous/db/mongo/data/
+
+# VS code stuff
+.vscode-server/
+.config/
+.kite/
+.local/
+.vs-liveshare-keychain
+.vscode
+
+#git stuff
+.gitconfig
+
+.bash_history
