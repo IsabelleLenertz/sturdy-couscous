@@ -99,10 +99,10 @@ class connection_checker():
 		tlsv1_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
 
 		contexts_dict = {
-			tlsv1_context: "TLSv1.0",
-			tlsv1_1_context: "TLSv1.1",
-			tlsv1_2_context: "TLSv1.2",
-			tlsv1_3_context: "TLSv1.3",
+			tlsv1_context: "TLSv1_0",
+			tlsv1_1_context: "TLSv1_1",
+			tlsv1_2_context: "TLSv1_2",
+			tlsv1_3_context: "TLSv1_3",
 		}
 
 		contexts = [tlsv1_3_context, tlsv1_2_context, tlsv1_1_context, tlsv1_context]
@@ -145,29 +145,29 @@ class connection_checker():
 		all_ciphers = context.get_ciphers()
 
 		cipher_dict = {
-			"TLSv1.0": [],
-			"TLSv1.1": [],
-			"TLSv1.2": [],
-			"TLSv1.3": []
+			"TLSv1_0": [],
+			"TLSv1_1": [],
+			"TLSv1_2": [],
+			"TLSv1_3": []
 		}
 
 		for cipher in all_ciphers:
-			if cipher['protocol'] in ["TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1.0"]:
+			if cipher['protocol'] in ["TLSv1_3", "TLSv1_2", "TLSv1_1", "TLSv1_0"]:
 				cipher_dict[cipher['protocol']].append(cipher['name'])				
 
 		return cipher_dict
 
 	# Returns a context for a given TLS version.
 	def get_context_by_version(self, tls_version):
-		if tls_version == "TLSv1.3":
+		if tls_version == "TLSv1_3":
 			tlsv1_3_context = ssl.create_default_context()
 			tlsv1_3_context.options |= (ssl.PROTOCOL_TLS | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2)
 			return tlsv1_3_context
-		elif tls_version == "TLSv1.2":
+		elif tls_version == "TLSv1_2":
 			return ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-		elif tls_version == "TLSv1.1":
+		elif tls_version == "TLSv1_1":
 			return ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
-		elif tls_version == "TLSv1.0":
+		elif tls_version == "TLSv1_0":
 			return ssl.SSLContext(ssl.PROTOCOL_TLSv1) 
 
 	# Returns a list of all ciphers supported by the domain's context 
@@ -180,13 +180,13 @@ class connection_checker():
 		
 		for tls_version in tls_versions_supported:
 
-			if tls_version == "TLSv1.3":
+			if tls_version == "TLSv1_3":
 				# cannot disable any of the TLS1.3 ciphers. 
 				# can only get the shared cipher at the time being.
 				s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				sslSocket = self.get_context_by_version("TLSv1.3").wrap_socket(s, server_hostname=domain)
+				sslSocket = self.get_context_by_version("TLSv1_3").wrap_socket(s, server_hostname=domain)
 				sslSocket.connect((domain, port))
-				supported_cipher_dict["TLSv1.3"].append(sslSocket.cipher()[0])
+				supported_cipher_dict["TLSv1_3"].append(sslSocket.cipher()[0])
 				sslSocket.close()
 
 			else:

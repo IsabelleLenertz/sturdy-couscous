@@ -2,7 +2,8 @@ from Garbanzo import Checker, DomainInfo
 from bouneschlupp import parser
 import pandas as pd 
 from threading import Thread
-
+from Mongo_Client import DBClient
+from Printer import Printer
 
 # Driver for Checker & Classifier interface.
 
@@ -14,7 +15,7 @@ class security_crawler(Thread):
 		self.sites_to_visit = set()	
 		self.domain_infos = set()
 		self.red_list = set()
-		self.db_client = None
+		self.db_client = DBClient()
 
 	def get_history(self, filename):
 		unique_history = set()
@@ -58,13 +59,14 @@ class security_crawler(Thread):
 		d.ciphers_supported = ciphers_supported
 
 		url_dict = d.export_json()
-		print(url_dict)
-		self.domain_infos.add(d)
-
 		# get results from classifier..
 		# << don't know how that will work yet >>
 
 		# output to mongo
+		client = DBClient()
+		client.column.insert(url_dict)
+
+		self.domain_infos.add(d)
 
 	def stupid_add(self, num):
 		print(str(num + num))
@@ -88,11 +90,9 @@ class security_crawler(Thread):
 	def run(self):
 		# obtain first level of history
 		# then add children to visit from first level of history.
-		self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
-#		self.get_history(filename="sturdycouscous/history_small.csv")
-		self.add_children_to_visit()
-
-		print(self.sites_to_visit)
+		# self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
+		self.get_history(filename="sturdycouscous/history/history_medium.csv")
+		# self.add_children_to_visit()
 
 		# making the set much smaller.
 		small_set = set()
@@ -120,7 +120,10 @@ class security_crawler(Thread):
 		for t in running_threads:
 			t.join() 
 
+
+
 if __name__ == "__main__":
 	sc = security_crawler()
 #	sc.sample_run()
 	sc.run()
+	Printer().output_report()
