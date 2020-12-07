@@ -1,7 +1,8 @@
 from logging import ERROR
 from bs4 import BeautifulSoup
 import requests
-from sturdycouscous.bouneschlupp import errors
+#from sturdycouscous.bouneschlupp import errors
+from . import errors
 import logging as log
 class Parser:
     """ Prases an HTML page and extracts data such a child-links
@@ -30,7 +31,8 @@ class Parser:
     def get_links(self):
         children = set()
         for link in self.links:
-            children.add(link.attrs['href'])
+            if 'href' in link.attrs:
+                children.add(link.attrs['href'])
         return children
 
     def get_links_from_child_pages(self):

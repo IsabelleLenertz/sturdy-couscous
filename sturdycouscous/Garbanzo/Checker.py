@@ -4,16 +4,55 @@
 # 3) Look for open ports
 # 4) Get all ciphers supported 
 import socket, ssl
+import re
 import requests
 import copy
 from datetime import datetime
 
 class connection_checker():
 
+	# Copied over from Security Crawler.
+
+	def grab_domain_name(self, url):
+		
+		common_tlds = ['com', 'net', 'org', 'edu', 'gov']
+		url_split = re.split('\.|/', url)
+		
+		tld_indx = 0
+		domain_name = ""
+
+		for i in range(len(url_split)):
+			if url_split[i] in common_tlds:
+				tld_indx = i
+				break
+
+		domain_name = url_split[tld_indx-1] + "." + url_split[tld_indx]
+		return domain_name
+
+
+	def checker_analysis(self, url):
+
+		# c = Checker.connection_checker()
+
+		domain = self.grab_domain_name(url)
+
+		valid_cert = self.certificate_checker(domain)
+		ports_open = self.port_checker(domain)
+		tls_versions_supported = self.tls_versions_checker(domain)
+		ciphers_supported = self.get_supported_ciphers(domain, tls_versions_supported)
+		red_list = False
+
+		# redlist websites supporting tls v1 and v1.1
+		red_list = ('TLSv1.1' in tls_versions_supported) or ('TLSv1.0' in tls_versions_supported) or ("https" not in url)
+
+		return domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list
+
+
+
 	# Returns list of open ports.
 	def port_checker(self, domain):
 
-		port_list = [20, 21, 22, 23, 25, 53, 69, 67, 80, 110, 119, 123, 143, 161, 162, 389, 443, 445, 514, 554, 636, 1720, 3389, 5060, 5061]
+		port_list = [20, 21, 69, 80, 123, 8080, 389]
 		ports_open = []
 
 		for port in port_list:

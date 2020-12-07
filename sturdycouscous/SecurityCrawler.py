@@ -1,85 +1,121 @@
 from Garbanzo import Checker, DomainInfo
-from bouneschlupp import Parser
+from bouneschlupp import parser, Classifier
 import pandas as pd 
-import re
-# Driver for Checker interface.
-'''
-NOTE: This is code copied over from CheckTester.py when CheckTester used to be the driver.
-Now CheckTester is gonna be used for unit testing.
-'''
+from threading import Thread
 
-# More random notes -- need to check certificate first.
-# The connections will all fail if the certificate isn't trusted or valid.
-# And I'm too lazy to put in try/catch blocks.
 
-# another big note: domain names should NOT include the http or the www part.
+# Driver for Checker & Classifier interface.
 
-class security_crawler():
+class security_crawler(Thread):
 
 	def __init__(self):
 		
-		self.sites_visited = set()
+		self.raw_history = set()
+		self.sites_to_visit = set()	
 		self.domain_infos = set()
 		self.red_list = set()
 		self.db_client = None
 
-
-	def read_csv(self, filename):
+	def get_history(self, filename):
+		unique_history = set()
 		df = pd.read_csv(filename)
 		
-		checker = Checker.connection_checker()		
 		for indx, row in df.iterrows():
 			url = row['url']
-			domain = self.grab_tld(url)
-			
+			if url not in self.raw_history:
+				self.raw_history.add(url)
+				self.sites_to_visit.add(url)
 
-			# if top-level domain is not in site visited, mark it as visited, then perform checks.
-			if domain not in self.sites_visited:
-				print(domain)
-				self.sites_visited.add(domain)
+	def add_children_to_visit(self):
+		# create "parser" objects for each of the urls.
 
-				# checking_time:
+		for link in self.raw_history:
+			p = parser.Parser(link)
+			print(link)
+			children = p.get_links_from_child_pages()
+
+
+			for child in children:
+				if "http" in child: 
+					self.sites_to_visit.add(child)
+
+	# The thread function.
+	def crawl_url(self, url):
+
+		categories = {'IT': 4, 'government': 1, 'education': 2, 'news': 5, 'other': 9, 'commerce': 3, 'social-media': 2}
+		reverse_categories = {cat[1]: cat[0] for cat in categories.items()}
+
+		c = Checker.connection_checker()
+		d = DomainInfo.domain_info(url)
+
+		domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
+		print(domain)
+
+		if red_list:
+			self.red_list.add(url)
 		
+		d.domain = domain
+		d.valid_cert = valid_cert
+		d.ports_open = ports_open
+		d.tls_versions_supported = tls_versions_supported
+		d.ciphers_supported = ciphers_supported
 
-	def grab_tld(self, url):
+		# get results from classifier..
+		category = Classifier.Classifier(url).classification
+		print(category)
 		
-		common_tlds = ['com', 'net', 'org', 'edu', 'gov']
-		url_split = re.split('\.|/', url)
+		# d.categories.append(reverse_categories[category])
+	
+		url_dict = d.export_json()
+		print(url_dict)
+		self.domain_infos.add(d)
+
+	
+		# << don't know how that will work yet >>
+
+		# output to mongo
+
+	def stupid_add(self, num):
+		print(str(num + num))
+
+	def sample_run(self):
+		nums = range(5)
+		threads = 5 
+		running_threads = []		
 		
-		tld_indx = 0
-		domain_name = ""
+		for num in nums:
+			t = Thread(target=self.stupid_add, args=(num,))
+			t.start()
+			print("Thread " + str(t) + " started")
+			running_threads.append(t)
 
-		for i in range(len(url_split)):
-			if url_split[i] in common_tlds:
-				tld_indx = i
-				break
+		# joining threads
+		for t in running_threads:
+			t.join()
 
-		domain_name = url_split[tld_indx-1] + "." + url_split[tld_indx]
-		return domain_name
 
+	def run(self):
+		# obtain first level of history
+		# then add children to visit from first level of history.
+		self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
+		self.add_children_to_visit()
+		print(self.sites_to_visit)
+
+		threads = len(self.sites_to_visit)
+		running_threads = []		
+
+		# start each thread
+		for url in self.sites_to_visit:
+			t = Thread(target=self.crawl_url, args=(url,))
+			t.start()
+			print("Thread " + str(t) + " started")
+			running_threads.append(t)
+
+		# joining threads
+		for t in running_threads:
+			t.join() 
 
 if __name__ == "__main__":
 	sc = security_crawler()
-	sc.read_csv(filename="history_small.csv")
-
-
-
-# from Checker import *
-
-# def test_given_domains(domain_list=['amazon.com', 'google.com', 'facebook.com', 'badssl.com', 'python.org']):
-# 	checker = connection_checker()
-# 	# domain_list = ['badssl.com']
-# 	for domain in domain_list:
-# 		certificate_valid = checker.certificate_checker(domain)
-# 		versions_supported = checker.tls_versions_checker(domain)
-# 		all_ciphers = checker.get_all_ciphers(domain)
-
-# 		print(all_ciphers)
-		
-# 		common_ports = [80, 443]
-# 		for port in common_ports:
-# 			print(checker.port_checker(domain, port))
-
-
-# if __name__ == "__main__":
-# 	test_given_domains()
+#	sc.sample_run()
+	sc.run()
