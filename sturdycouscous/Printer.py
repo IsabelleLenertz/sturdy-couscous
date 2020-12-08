@@ -38,6 +38,11 @@ class Printer():
                     tally[version] = {'count': 1}
                 else:
                     tally[version]['count'] += 1
+                cipherlist = row['Checker']['ciphers_supported']
+                for ver in cipherlist:
+                    if ver in versionlist and cipherlist[ver]:
+                        tally[version]['ciphers_supported'] = ver
+        print(tally)
 
         # Build output string
         tally_output = 'SSL Version Tally:\n'
@@ -94,5 +99,17 @@ class Printer():
                                         __/ |                                          
                                        |___/
             ***************************************************************************
+
+
+MP""""""`MM   dP                           dP          MM'""""'YMM                                                                
+M  mmmmm..M   88                           88          M' .mmm. `M                                                                
+M.      `YM d8888P dP    dP 88d888b. .d888b88 dP    dP M  MMMMMooM .d8888b. dP    dP .d8888b. .d8888b. .d8888b. dP    dP .d8888b. 
+MMMMMMM.  M   88   88    88 88'  `88 88'  `88 88    88 M  MMMMMMMM 88'  `88 88    88 Y8ooooo. 88'  `"" 88'  `88 88    88 Y8ooooo. 
+M. .MMM'  M   88   88.  .88 88       88.  .88 88.  .88 M. `MMM' .M 88.  .88 88.  .88       88 88.  ... 88.  .88 88.  .88       88 
+Mb.     .dM   dP   `88888P' dP       `88888P8 `8888P88 MM.     .dM `88888P' `88888P' `88888P' `88888P' `88888P' `88888P' `88888P' 
+MMMMMMMMMMM                                        .88 MMMMMMMMMMM                                                                
+                                               d8888P                                                                             
+
+
             '''
         return figlet

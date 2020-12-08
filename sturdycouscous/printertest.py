@@ -9,10 +9,10 @@ r = TLS_Record().parse_record(inputdict)
 
 # Printer().dump_fields({'Checker.tls_versions_supported'})
 
-# Printer().tally_tls_versions()
+Printer().tally_tls_versions()
 
 # Printer().tally_top_domains()
 
-Printer().output_report()
+# Printer().output_report()
 
 
