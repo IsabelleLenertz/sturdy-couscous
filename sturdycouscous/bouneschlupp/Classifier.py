@@ -7,7 +7,6 @@ from nltk.corpus import stopwords
 import requests
 import string
 
-
 DOMAIN = 'couscousmongo'
 PORT = 27017
 DB_NAME = "couscous_db"
@@ -47,7 +46,6 @@ class Classifier:
     USERNAME = "root"
     PASSWORD = "root"
     
-
     def __init__(self, url):
         self.url = url
         

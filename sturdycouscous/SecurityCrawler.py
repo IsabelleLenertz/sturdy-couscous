@@ -40,10 +40,12 @@ class security_crawler(Thread):
 			print(link)
 			children = p.get_links_from_child_pages()
 
+		domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
+		print(domain)
 
-			for child in children:
-				if "http" in child: 
-					self.sites_to_visit.add(child)
+		for child in children:
+			if "http" in child: 
+				self.sites_to_visit.add(child)
 
 	# The thread function.
 	def crawl_url(self, url):
