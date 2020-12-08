@@ -7,27 +7,16 @@ import socket, ssl
 import re
 import requests
 import copy
-from datetime import datetime
+from datetime import datetime, timedelta
+import tldextract
 
 class connection_checker():
 
 	# Copied over from Security Crawler.
 
 	def grab_domain_name(self, url):
-		
-		common_tlds = ['com', 'net', 'org', 'edu', 'gov']
-		url_split = re.split('\.|/', url)
-		
-		tld_indx = 0
-		domain_name = ""
-
-		for i in range(len(url_split)):
-			if url_split[i] in common_tlds:
-				tld_indx = i
-				break
-
-		domain_name = url_split[tld_indx-1] + "." + url_split[tld_indx]
-		return domain_name
+		url_split = tldextract.extract(url)
+		return '.'.join(part for part in url_split if part)
 
 
 	def checker_analysis(self, url):
@@ -36,7 +25,7 @@ class connection_checker():
 
 		domain = self.grab_domain_name(url)
 
-		valid_cert = self.certificate_checker(domain)
+		(valid_cert, expiering_soon) = self.certificate_checker(domain)
 		ports_open = self.port_checker(domain)
 		tls_versions_supported = self.tls_versions_checker(domain)
 		ciphers_supported = self.get_supported_ciphers(domain, tls_versions_supported)
@@ -45,7 +34,7 @@ class connection_checker():
 		# redlist websites supporting tls v1 and v1.1
 		red_list = ('TLSv1.1' in tls_versions_supported) or ('TLSv1.0' in tls_versions_supported) or ("https" not in url)
 
-		return domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list
+		return domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list
 
 
 
@@ -76,16 +65,20 @@ class connection_checker():
 		
 		# sslSocket.connect can throw an error
 		valid_cert = False
+		expiering_soon = False
+
 		try:
 			sslSocket.connect((domain, port))
 			cert = sslSocket.getpeercert()
 			expiry_date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
 			valid_cert = datetime.now() < expiry_date
+			expiering_soon = datetime.now() + timedelta(weeks=2) > expiry_date
+
 		except:
 			pass
 		finally:
 			sslSocket.close()
-			return valid_cert
+			return (valid_cert, expiering_soon)
 
 
 	# Returns the list of all tls contexts
@@ -211,5 +204,3 @@ class connection_checker():
 						sslSocket.close()
 
 		return supported_cipher_dict
-
-

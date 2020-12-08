@@ -1,32 +1,43 @@
-from pymongo import MongoClient, errors
+from logging import error
+from pymongo import MongoClient, collection, errors
 
-class DBClient():
-    def __init__(self):
-        self.domain = 'couscousmongo'
-        self.port = 27017
-        self.db_name = "couscous_db"
-        self.column_name = "tls_checks"
+DOMAIN = 'couscousmongo'
+PORT = 27017
+DB_NAME = "couscous_db"
 
-        self.client = self.connect_client()
-        self.db = self.client[self.db_name]
-        self.column = self.db[self.column_name]
+class Client:
+    
+    def __init__(self, collection_name):
+        self.collection_name = collection_name
 
-    def connect_client(self):
+    def connect(self):
         try:
-            client = MongoClient(
-                    host = [ str(self.domain) + ":" + str(self.port) ],
+            self.client = MongoClient(
+                    host = [ str(DOMAIN) + ":" + str(PORT) ],
                     serverSelectionTimeoutMS = 3000, # 3 second timeout
                     username = "root",
                     password = "root"
             )
-            return client
+            db = self.client[DB_NAME]
+            self.collection = db[self.collection_name]
+            return True
         except errors.ServerSelectionTimeoutError as err:
-            print("pymongo ERROR: ", err)
-            return None
+            raise err
+        except Exception:
+            return False
 
-    def insert(self, inputdict):
-        return self.column.insert_one(inputdict, check_keys=False)
+    def insert(self, data):
+        return self.collection.insert_one(data)
 
-    def insert_rows(self, inputlist):
-        return self.column.insert(inputlist, check_keys=False)
+    def close(self):
+        self.client.close()
 
+    def drop(self):
+        self.collection.drop()
+
+    def print_all(self):
+        print("******************TEST MONGO OUTPUT START******************")
+        # Check DB read
+        for each in self.collection.find():
+            print(each)
+        print("******************TEST MONGO OUTPUT END********************")

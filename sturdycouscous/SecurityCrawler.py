@@ -1,11 +1,15 @@
+import sys
+sys.path.append("/usr/src/app/sturdy-couscous/sturdycouscous")
+
 from Garbanzo import Checker, DomainInfo
-from bouneschlupp import parser
+from bouneschlupp import parser, Classifier
+from Mongo_Client import Client
 import pandas as pd 
 from threading import Thread
-from Mongo_Client import DBClient
-from Printer import Printer
+
 
 # Driver for Checker & Classifier interface.
+MONGO_COLLECTION = "domain_info"
 
 class security_crawler(Thread):
 
@@ -15,7 +19,7 @@ class security_crawler(Thread):
 		self.sites_to_visit = set()	
 		self.domain_infos = set()
 		self.red_list = set()
-		self.db_client = DBClient()
+		self.db_client = None
 
 	def get_history(self, filename):
 		unique_history = set()
@@ -32,22 +36,20 @@ class security_crawler(Thread):
 
 		for link in self.raw_history:
 			p = parser.Parser(link)
-			print(link)
 			children = p.get_links_from_child_pages()
 
+		domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
 
-			for child in children:
-				if "http" in child: 
-					self.sites_to_visit.add(child)
+		for child in children:
+			if "http" in child: 
+				self.sites_to_visit.add(child)
 
 	# The thread function.
 	def crawl_url(self, url):
-
 		c = Checker.connection_checker()
 		d = DomainInfo.domain_info(url)
 
-		domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
-		print(domain)
+		domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
 
 		if red_list:
 			self.red_list.add(url)
@@ -57,72 +59,52 @@ class security_crawler(Thread):
 		d.ports_open = ports_open
 		d.tls_versions_supported = tls_versions_supported
 		d.ciphers_supported = ciphers_supported
+		d.expiering_soon = expiering_soon
 
-		url_dict = d.export_json()
 		# get results from classifier..
-		# << don't know how that will work yet >>
-
-		# output to mongo
-		client = DBClient()
-		client.column.insert(url_dict)
+		d.classification = Classifier.Classifier(url).classification
 
 		self.domain_infos.add(d)
 
-	def stupid_add(self, num):
-		print(str(num + num))
-
+		# output to mongo
+		mongo = Client(MONGO_COLLECTION)
+		while(mongo.connect()):
+			mongo.insert(d.export_json())
+			mongo.close()
+			print('db updated with ', url)
+			break
+			
 	def sample_run(self):
-		nums = range(5)
-		threads = 1 
 		running_threads = []		
-		
-		for num in nums:
-			t = Thread(target=self.stupid_add, args=(num,))
+		urls = ["github.com", "https://www.kqed.org/coronavirusliveupdates"]
+		for url in urls:
+			t = Thread(target=self.crawl_url, args=(url,))
 			t.start()
-			print("Thread " + str(t) + " started")
 			running_threads.append(t)
 
 		# joining threads
 		for t in running_threads:
 			t.join()
 
-
 	def run(self):
 		# obtain first level of history
 		# then add children to visit from first level of history.
-		#self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
-		#self.get_history(filename="sturdycouscous/history/history_medium.csv")
-		self.get_history(filename="sturdycouscous/history/history_small.csv")
-		#self.get_history(filename="sturdycouscous/history/history_large.csv")
+		self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
+		print("looking for lost kids")
 		self.add_children_to_visit()
+		print("about to scan %s websites", len(self.sites_to_visit))
 
-		# making the set much smaller.
-		small_set = set()
-		i = 0
-		for item in self.sites_to_visit:
-			if (i >= 4):
-				break
-			small_set.add(item)
-			i += 1	
-
-		self.sites_to_visit = small_set
-		# end the making smaller part.
-
-		threads = len(self.sites_to_visit)
 		running_threads = []		
-
 		# start each thread
 		for url in self.sites_to_visit:
 			t = Thread(target=self.crawl_url, args=(url,))
 			t.start()
-			print("Thread " + str(t) + " started")
+			print("Thread %s started to evaluate %s" ,  str(t) , url)
 			running_threads.append(t)
 
 		# joining threads
 		for t in running_threads:
 			t.join() 
-
-
 
 if __name__ == "__main__":
 	sc = security_crawler()

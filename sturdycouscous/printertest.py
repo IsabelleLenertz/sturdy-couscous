@@ -3,6 +3,8 @@ inputdict = {'URL': 'https://www.kqed.org/coronavirusliveupdates', 'Title': '', 
 
 # Printer().mongo_query({'Checker.tls_versions_supported'})
 
+# Printer().mongo_query({})
+
 # Printer().tally_top_domains()
 
 # Printer().invalid_cert_stats()

@@ -1,6 +1,5 @@
-from Mongo_Client import DBClient
+from Mongo_Printer_Client import DBClient
 from models import TLS_Record
-import collections
 
 class Printer():
     def __init__(self):
@@ -16,6 +15,7 @@ class Printer():
         output = []
         for row in self.client.column.find({}, fields):
             output.append(row)
+        print(output)
         return output
 
     def dump_db(self):
@@ -132,7 +132,7 @@ class Printer():
         for row in results:
             if not row['Checker']['certificate_valid']:
                 invalid_count += 1
-        return("Percentage of invalid certs: " + str(round(invalid_count/total*100, 2)) + "%\n")
+        return("Percentage of invalid certs: " + str(round(invalid_count/max(total,1)*100, 2)) + "%\n")
             
 
     def output_report(self):
