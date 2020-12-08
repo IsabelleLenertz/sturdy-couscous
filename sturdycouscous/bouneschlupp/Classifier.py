@@ -99,9 +99,3 @@ class Classifier:
             'categories': categories,
             'data': evaluation
         }
-<<<<<<< HEAD
-=======
-
-c = Classifier("berkeley.edu")
-print(c.classification)
->>>>>>> main
