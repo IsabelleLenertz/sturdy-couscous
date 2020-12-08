@@ -73,7 +73,7 @@ class security_crawler(Thread):
 
 	def sample_run(self):
 		nums = range(5)
-		threads = 5 
+		threads = 1 
 		running_threads = []		
 		
 		for num in nums:
@@ -90,9 +90,10 @@ class security_crawler(Thread):
 	def run(self):
 		# obtain first level of history
 		# then add children to visit from first level of history.
-		self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
-		self.get_history(filename="sturdycouscous/history/history_medium.csv")
+		#self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
+		#self.get_history(filename="sturdycouscous/history/history_medium.csv")
 		self.get_history(filename="sturdycouscous/history/history_small.csv")
+		#self.get_history(filename="sturdycouscous/history/history_large.csv")
 		self.add_children_to_visit()
 
 		# making the set much smaller.

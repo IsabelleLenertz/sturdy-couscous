@@ -1,22 +1,11 @@
+#!/bin/bash
+set -ax
+
 # This script runs the composition that connects an instance of the core Garbanzo image to the mongo.db image in the most basic way possible
 
 # Run this from the current directory for ideal results
 
-
-
-NETWORK_NAME=couscous_net
-
-CORE_IMAGE_TAG=couscous_image
-
-MONGO_IMAGE_TAG=couscous_mongo_image
-
-CORE_CONTAINER_NAME=couscouscore
-
-MONGO_CONTAINER_NAME=couscousmongo
-
-
-
-
+source couscous.env
 
 function makeNetwork() {
 
@@ -35,7 +24,7 @@ function launchCore() {
 
 	docker build -t $CORE_IMAGE_TAG $PWD/sturdycouscous/
 
-	docker run -v $PWD/:/usr/src/app --network=$NETWORK_NAME --name $CORE_CONTAINER_NAME --link $MONGO_CONTAINER_NAME $CORE_IMAGE_TAG
+	docker run -it -v $PWD/:/usr/src/app --network=$NETWORK_NAME --name $CORE_CONTAINER_NAME --link $MONGO_CONTAINER_NAME $CORE_IMAGE_TAG /bin/bash
 
 }
 
