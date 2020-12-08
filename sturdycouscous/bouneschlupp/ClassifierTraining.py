@@ -103,4 +103,3 @@ with open("sturdycouscous/resources/keyword_training.csv") as csvfile:
                 raise Exception()
         except BaseException as e:
             print(type(e))
-

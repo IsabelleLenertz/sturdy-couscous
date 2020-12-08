@@ -1,10 +1,16 @@
+import sys
+sys.path.append("/usr/src/app/sturdy-couscous/sturdycouscous")
+
 from Garbanzo import Checker, DomainInfo
 from bouneschlupp import parser, Classifier
+from Mongo_Client import Client
 import pandas as pd 
 from threading import Thread
+from pprint import PrettyPrinter
 
 
 # Driver for Checker & Classifier interface.
+MONGO_COLLECTION = "domain_info"
 
 class security_crawler(Thread):
 
@@ -34,22 +40,20 @@ class security_crawler(Thread):
 			print(link)
 			children = p.get_links_from_child_pages()
 
+		domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
+		print(domain)
 
-			for child in children:
-				if "http" in child: 
-					self.sites_to_visit.add(child)
+		for child in children:
+			if "http" in child: 
+				self.sites_to_visit.add(child)
 
 	# The thread function.
 	def crawl_url(self, url):
-
-		categories = {'IT': 4, 'government': 1, 'education': 2, 'news': 5, 'other': 9, 'commerce': 3, 'social-media': 2}
-		reverse_categories = {cat[1]: cat[0] for cat in categories.items()}
-
+		print("Hi from the ", url, "thread")
 		c = Checker.connection_checker()
 		d = DomainInfo.domain_info(url)
 
-		domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
-		print(domain)
+		domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
 
 		if red_list:
 			self.red_list.add(url)
@@ -59,56 +63,51 @@ class security_crawler(Thread):
 		d.ports_open = ports_open
 		d.tls_versions_supported = tls_versions_supported
 		d.ciphers_supported = ciphers_supported
+		d.expiering_soon = expiering_soon
 
 		# get results from classifier..
-		category = Classifier.Classifier(url).classification
-		print(category)
-		
-		# d.categories.append(reverse_categories[category])
-	
-		url_dict = d.export_json()
-		print(url_dict)
+		d.classification = Classifier.Classifier(url).classification
+
 		self.domain_infos.add(d)
 
-	
-		# << don't know how that will work yet >>
-
 		# output to mongo
+		mongo = Client(MONGO_COLLECTION)
+		while(mongo.connect()):
+			print(d.export_json())
+			mongo.insert(d.export_json())
+			mongo.close()
+			break
+			
 
 	def stupid_add(self, num):
 		print(str(num + num))
 
 	def sample_run(self):
-		nums = range(5)
-		threads = 5 
 		running_threads = []		
-		
-		for num in nums:
-			t = Thread(target=self.stupid_add, args=(num,))
+		urls = ["github.com", "https://www.kqed.org/coronavirusliveupdates"]
+		for url in urls:
+			t = Thread(target=self.crawl_url, args=(url,))
 			t.start()
-			print("Thread " + str(t) + " started")
+			print("Thread", str(t), " started to evaluate " , url)
 			running_threads.append(t)
 
 		# joining threads
 		for t in running_threads:
 			t.join()
 
-
 	def run(self):
 		# obtain first level of history
 		# then add children to visit from first level of history.
 		self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
 		self.add_children_to_visit()
-		print(self.sites_to_visit)
+		print("about to scan %s websites", len(self.sites_to_visit))
 
-		threads = len(self.sites_to_visit)
 		running_threads = []		
-
 		# start each thread
 		for url in self.sites_to_visit:
 			t = Thread(target=self.crawl_url, args=(url,))
 			t.start()
-			print("Thread " + str(t) + " started")
+			print("Thread %s started to evaluate %s" ,  str(t) , url)
 			running_threads.append(t)
 
 		# joining threads
@@ -117,5 +116,5 @@ class security_crawler(Thread):
 
 if __name__ == "__main__":
 	sc = security_crawler()
-#	sc.sample_run()
-	sc.run()
+	sc.sample_run()
+#	sc.run()
