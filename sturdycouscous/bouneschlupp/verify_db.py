@@ -27,6 +27,3 @@ print("******************TEST MONGO OUTPUT START******************")
 for each in collection.find():
     print(each)
 print("******************TEST MONGO OUTPUT END********************")
-
-
-
