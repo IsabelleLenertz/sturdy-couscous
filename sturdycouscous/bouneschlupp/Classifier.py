@@ -1,27 +1,27 @@
-# read cvs file with schema url, classification
-""" store keywords for each classification into table (or database) with keyaord and ocurrence
-    <meta name="keyewords" content="<comma separated list of the keywords">
-    <Title>: look for nouns
-    <Body> <title>: 
-    <Base>
-    <h1>-<h6>
-    <legend>
-    <img alt="   ">"""
+import sys
+sys.path.append("./sturdycouscous")
 
-import csv
-import requests
+from enum import Enum
 from bs4 import BeautifulSoup
+from pymongo import MongoClient, errors, results
 from nltk.tokenize import word_tokenize
 from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
+import requests
 import string
-import json
-from pymongo import MongoClient, errors
+import tldextract
+import regex as re
 
 DOMAIN = 'couscousmongo'
 PORT = 27017
 DB_NAME = "couscous_db"
 COLLECTION = "Categories"
+CATEGORIES = ['IT', 'government', 'education', 'news', 'other', 'commerce', 'social-media']
+TAGS = ["body", 'title', 'h1', 'p', 'q', 'a', 'blockquote', 'imgsrc', 'map', 'table', 'tr', 'th', 'td', 'caption', 'base']
+TLD_MAPPING = {
+    'edu': 'education',
+    'gov': 'government'
+}
 
 def connect_client():
     try:
@@ -36,28 +36,10 @@ def connect_client():
         print("pymongo ERROR: ", err)
         return None
 
-'''
-{
-    _id: "IT"
-    keywords: {word2: 3}, {word2:1}
-}
-'''
-def update_db(category, collection, key_words):
-    current_category = collection.find_one({'_id' : category})
-    if current_category == None:
-        weighted_keywords = {}
-        for word in key_words:
-            weighted_keywords[word] = weighted_keywords.get(word, 0) + 1
-        collection.insert_one({ '_id' : category, 'keywords' : weighted_keywords})
-    else:
-        current_dic = current_category.get('keywords')
-        weighted_keywords = {}
-        for word in key_words:
-            weighted_keywords[word] = current_dic.get(word, 0) + 1
-        collection.update_one({'_id' : category}, {'$set': { 'keywords': weighted_keywords }})
-   
-def clean_tokens(text):
-    tokens = word_tokenize(text)
+def clean_tokens(tags):
+    tokens = []
+    for tag in tags:
+        tokens.extend(word_tokenize(str(tag.string)))
     tokens = [w.lower() for w in tokens]
     table = str.maketrans('', '', string.punctuation)
     stripped = [w.translate(table) for w in tokens]
@@ -68,38 +50,55 @@ def clean_tokens(text):
     porter = PorterStemmer()
     return [porter.stem(word) for word in words]
 
-client = connect_client()
-db = client[DB_NAME]
-collection = db[COLLECTION]
-collection.drop()
 
-with open("sturdycouscous/resources/keyword_training.csv") as csvfile:
-    training_sample = csv.reader(csvfile, delimiter=',')
-    for row in training_sample:
+class Classifier:
+    DOMAIN = 'couscousmongo'
+    PORT = 27017
+    DB_NAME = "couscous_db"
+    COLUMN_NAME = "tls_checks"
+    USERNAME = "root"
+    PASSWORD = "root"
+    TAG_FILTER = re.compile("meta|title|h1|p|q|a|blockquote|imgsrc|map|table|tr|th|td|caption|base")
+
+    def __init__(self, url):
+        self.url = url
+        
+        # First, get the page content and parse into a beautiful tree
+        response = requests.get("https://www."+ url.replace('https://', '').replace('www.', ''))
         try:
-            # Get and parse HTML content
-            print("https://www."+ row[0].replace('https://', '').replace('www.', ''))
-            response = requests.get("https://www."+ row[0].replace('https://', '').replace('www.', ''))
             if response.status_code == 200:
-                content = BeautifulSoup(response.content, 'lxml')
-                
+                self.content = BeautifulSoup(response.content, 'lxml')
                 # Look for the keywords indicated by author
-                metadata = content.head.find("meta", attrs = {'name':'keywords'})
-                if not metadata: 
-                    metadata = content.head.find("meta", attrs = {'name':'Keywords'})
-                if metadata:
-                    key_words = clean_tokens(metadata.get('content'))
-                    update_db(row[1], collection, key_words)
-                
-                # Look for description and extracts keywords
-                description_tag = content.head.find("meta", attrs = {'name':'description'})
-                if not description_tag:
-                    description_tag = content.head.find("meta", attrs = {'name':'Description'})
-                if description_tag:
-                    key_words = clean_tokens(description_tag.get('content'))
-                    update_db(row[1], collection, key_words) 
+                self.page_content = clean_tokens(self.content.findAll(self.TAG_FILTER))
             else:
                 print(response.status_code, ": ", response.reason)
-                raise Exception()
+                raise Exception(response.status_code + response.reason)
         except BaseException as e:
             print(type(e))
+            raise e
+        # Extract and normalized keywords from <head>
+        evaluation = {}
+        # Count keywords in each category
+        client = connect_client()
+        db = client[DB_NAME]
+        collection = db[COLLECTION]
+        for category in CATEGORIES:
+            category_keywords = collection.find_one({'_id': category}).get('keywords')
+            counter = 0
+            for word in self.page_content:
+                if word in category_keywords:
+                    counter += category_keywords[word] 
+            evaluation[category] = counter/len(self.page_content)*100
+        # Returns the category with the highest sco
+        tld = tldextract.extract(self.url)
+        evaluation["other"] = evaluation['other']/3
+        categories = [max(evaluation.keys(), key=(lambda k: evaluation[k]))]
+        if tld.suffix in TLD_MAPPING and TLD_MAPPING[tld.suffix] not in categories:
+            categories.append(TLD_MAPPING[tld.suffix])
+        self.classification = {
+            'categories': categories,
+            'data': evaluation
+        }
+
+c = Classifier("berkeley.edu")
+print(c.classification)
