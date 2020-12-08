@@ -34,3 +34,10 @@ class Client:
 
     def drop(self):
         self.collection.drop()
+
+    def print_all(self):
+        print("******************TEST MONGO OUTPUT START******************")
+        # Check DB read
+        for each in self.collection.find():
+            print(each)
+        print("******************TEST MONGO OUTPUT END********************")

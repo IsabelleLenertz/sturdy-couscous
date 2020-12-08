@@ -53,7 +53,7 @@ class security_crawler(Thread):
 		c = Checker.connection_checker()
 		d = DomainInfo.domain_info(url)
 
-		#domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
+		domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
 
 		if red_list:
 			self.red_list.add(url)
@@ -73,6 +73,7 @@ class security_crawler(Thread):
 		# output to mongo
 		mongo = Client(MONGO_COLLECTION)
 		while(mongo.connect()):
+			print(d.export_json())
 			mongo.insert(d.export_json())
 			mongo.close()
 			break

@@ -24,10 +24,10 @@ class domain_info():
 				"Title": self.title,
 				"Domain": self.domain,
 				"Checker": {
-					"tls_versions_supported": self.tls_versions_supported,
+					"tls_versions_supported": [str.replace(".", "-") for str in self.tls_versions_supported],
 					"open_ports": self.ports_open,
 					"certificate_valid": self.valid_cert,
-					"ciphers_supported": self.ciphers_supported,
+					"ciphers_supported": [str.replace(".", "-") for str in self.ciphers_supported],
 					"expiering_soon": self.expiering_soon
 				},
 				"Classification": self.classification
