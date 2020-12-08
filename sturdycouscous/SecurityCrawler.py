@@ -3,12 +3,14 @@ sys.path.append("/usr/src/app/sturdy-couscous/sturdycouscous")
 
 from Garbanzo import Checker, DomainInfo
 from bouneschlupp import parser, Classifier
+from Mongo_Client import Client
 import pandas as pd 
 from threading import Thread
 from pprint import PrettyPrinter
 
 
 # Driver for Checker & Classifier interface.
+MONGO_COLLECTION = "domain_info"
 
 class security_crawler(Thread):
 
@@ -64,11 +66,15 @@ class security_crawler(Thread):
 		# get results from classifier..
 		d.classification = Classifier.Classifier(url).classification
 
-		pp = PrettyPrinter(indent=4)
-		pp.pprint(d.export_json())
 		self.domain_infos.add(d)
 
 		# output to mongo
+		mongo = Client(MONGO_COLLECTION)
+		while(mongo.connect()):
+			mongo.insert(d.export_json())
+			mongo.close()
+			break
+			
 
 	def stupid_add(self, num):
 		print(str(num + num))
