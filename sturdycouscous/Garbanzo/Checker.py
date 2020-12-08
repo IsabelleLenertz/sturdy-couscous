@@ -1,42 +1,23 @@
-# Class with methods defined that `
+# Class with methods defined that
 # 1) Check certificate validity 
 # 2) Check TLS versions supported
 # 3) Look for open ports
 # 4) Get all ciphers supported 
-import socket, ssl
-import re
-import requests
-import copy
-from datetime import datetime
+import socket, ssl, tldextract
+from datetime import datetime, timedelta
 
 class connection_checker():
 
 	# Copied over from Security Crawler.
 
 	def grab_domain_name(self, url):
-		
-		common_tlds = ['com', 'net', 'org', 'edu', 'gov']
-		url_split = re.split('\.|/', url)
-		
-		tld_indx = 0
-		domain_name = ""
-
-		for i in range(len(url_split)):
-			if url_split[i] in common_tlds:
-				tld_indx = i
-				break
-
-		domain_name = url_split[tld_indx-1] + "." + url_split[tld_indx]
-		return domain_name
-
+		url_split = tldextract.extract(url)
+		return '.'.join(part for part in url_split if part)
 
 	def checker_analysis(self, url):
-
 		# c = Checker.connection_checker()
-
 		domain = self.grab_domain_name(url)
-
-		valid_cert = self.certificate_checker(domain)
+		(valid_cert, expiering_soon) = self.certificate_checker(domain)
 		ports_open = self.port_checker(domain)
 		tls_versions_supported = self.tls_versions_checker(domain)
 		ciphers_supported = self.get_supported_ciphers(domain, tls_versions_supported)
@@ -45,21 +26,16 @@ class connection_checker():
 		# redlist websites supporting tls v1 and v1.1
 		red_list = ('TLSv1.1' in tls_versions_supported) or ('TLSv1.0' in tls_versions_supported) or ("https" not in url)
 
-		return domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list
-
-
+		return domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list
 
 	# Returns list of open ports.
 	def port_checker(self, domain):
-
 		port_list = [20, 21, 69, 80, 123, 8080, 389]
 		ports_open = []
 
 		for port in port_list:
-
 			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			socket.setdefaulttimeout(1)
-		
 			result = s.connect_ex((domain, port))
 			if (result == 0):
 				ports_open.append(port)
@@ -68,7 +44,7 @@ class connection_checker():
 		return ports_open
 
 	# Checks whether the certificate obtained using the default_context is still valid.
-	# Returns True if certificate is still valid.
+	# Returns (bool, bool) #1 True if certificate is still valid. #2 True is the certificat expiers in more than 2 weeks
 	# Tabling the discussion for revoked certificates for later, since it's a bit complicated.
 	def certificate_checker(self, domain, port=443):
 		context = ssl.create_default_context()
@@ -76,17 +52,19 @@ class connection_checker():
 		
 		# sslSocket.connect can throw an error
 		valid_cert = False
+		expiering_soon = False
 		try:
 			sslSocket.connect((domain, port))
 			cert = sslSocket.getpeercert()
 			expiry_date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
+			print(expiry_date)
 			valid_cert = datetime.now() < expiry_date
+			expiering_soon = datetime.now() + timedelta(weeks=2) > expiry_date
 		except:
 			pass
 		finally:
 			sslSocket.close()
-			return valid_cert
-
+			return (valid_cert, expiering_soon)
 
 	# Returns the list of all tls contexts
 	def get_all_tls_contexts(self):
@@ -121,7 +99,6 @@ class connection_checker():
 
 		return versions_supported
 
-
 	def test_tls_version(self, context, domain, port=443):
 		success = True
 		try:
@@ -135,7 +112,6 @@ class connection_checker():
 			sslSocket.close()
 			return success
 	
-
 	# Returns a dictionary mapping tls version -> ciphers supported on the client side.
 	# socket.shared_ciphers returns only the client-side ciphers.
 	# therefore, need to test one by one.
@@ -172,7 +148,6 @@ class connection_checker():
 
 	# Returns a list of all ciphers supported by the domain's context 
 	def get_supported_ciphers(self, domain, tls_versions_supported, port=443):
-
 		# actually so we have to make a list of all the ciphers the client supports sorted out by TLS version
 		# and force a connection for each of those using that particular cipher, and see if it works or not.
 		supported_cipher_dict = {version: [] for version in tls_versions_supported}

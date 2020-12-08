@@ -6,41 +6,29 @@ class domain_info():
 		# Provided by Security Crawler
 		self.domain = ""
 		self.url = url
-
-		self.title = "" # for "habitat classifier" purposes
+		self.title = "" # for "habits classifier" purposes
 
 		# Checker fields
 		self.tls_versions_supported = []
 		self.ports_open = []
 		self.ciphers_supported = {}
 		self.valid_cert = False
+		self.expiering_soon = False
 
 		# Classification fields
-		self.categories = []
-		self.keywords = []
-		self.extension = ""
-
+		self.classification = {}
 
 	def export_json(self):
-		json_obj = {
-			"URL": self.url,
-			"Title": self.title,
-			"Domain": self.domain,
-			"Checker": {
-				"tls_versions_supported": self.tls_versions_supported,
-				"open_ports": self.ports_open,
-				"certificate_valid": self.valid_cert,
-				"ciphers_supported": self.ciphers_supported
-			},
-			"Classification": {
-				"categories": self.categories,
-				"data": {
-					"keywords": self.keywords,
-					"extension": self.extension
-				}
-
+		return {
+				"URL": self.url,
+				"Title": self.title,
+				"Domain": self.domain,
+				"Checker": {
+					"tls_versions_supported": self.tls_versions_supported,
+					"open_ports": self.ports_open,
+					"certificate_valid": self.valid_cert,
+					"ciphers_supported": self.ciphers_supported,
+					"expiering_soon": self.expiering_soon
+				},
+				"Classification": self.classification
 			}
-
-		}
-
-		return json_obj
