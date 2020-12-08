@@ -6,7 +6,6 @@ from bouneschlupp import parser, Classifier
 from Mongo_Client import Client
 import pandas as pd 
 from threading import Thread
-from pprint import PrettyPrinter
 
 
 # Driver for Checker & Classifier interface.
@@ -37,11 +36,9 @@ class security_crawler(Thread):
 
 		for link in self.raw_history:
 			p = parser.Parser(link)
-			print(link)
 			children = p.get_links_from_child_pages()
 
 		domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
-		print(domain)
 
 		for child in children:
 			if "http" in child: 
@@ -49,7 +46,6 @@ class security_crawler(Thread):
 
 	# The thread function.
 	def crawl_url(self, url):
-		print("Hi from the ", url, "thread")
 		c = Checker.connection_checker()
 		d = DomainInfo.domain_info(url)
 
@@ -73,22 +69,17 @@ class security_crawler(Thread):
 		# output to mongo
 		mongo = Client(MONGO_COLLECTION)
 		while(mongo.connect()):
-			print(d.export_json())
 			mongo.insert(d.export_json())
 			mongo.close()
+			print('db updated with ', url)
 			break
 			
-
-	def stupid_add(self, num):
-		print(str(num + num))
-
 	def sample_run(self):
 		running_threads = []		
 		urls = ["github.com", "https://www.kqed.org/coronavirusliveupdates"]
 		for url in urls:
 			t = Thread(target=self.crawl_url, args=(url,))
 			t.start()
-			print("Thread", str(t), " started to evaluate " , url)
 			running_threads.append(t)
 
 		# joining threads
@@ -99,6 +90,7 @@ class security_crawler(Thread):
 		# obtain first level of history
 		# then add children to visit from first level of history.
 		self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
+		print("looking for lost kids")
 		self.add_children_to_visit()
 		print("about to scan %s websites", len(self.sites_to_visit))
 
@@ -116,5 +108,5 @@ class security_crawler(Thread):
 
 if __name__ == "__main__":
 	sc = security_crawler()
-	sc.sample_run()
-#	sc.run()
+#	sc.sample_run()
+	sc.run()
