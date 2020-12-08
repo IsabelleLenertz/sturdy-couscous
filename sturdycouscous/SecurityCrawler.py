@@ -6,6 +6,7 @@ from bouneschlupp import parser, Classifier
 from Mongo_Client import Client
 import pandas as pd 
 from threading import Thread
+from Printer import Printer
 
 
 # Driver for Checker & Classifier interface.
@@ -20,6 +21,7 @@ class security_crawler(Thread):
 		self.domain_infos = set()
 		self.red_list = set()
 		self.db_client = None
+		self.checker = Checker.connection_checker()
 
 	def get_history(self, filename):
 		unique_history = set()
@@ -38,15 +40,13 @@ class security_crawler(Thread):
 			p = parser.Parser(link)
 			children = p.get_links_from_child_pages()
 
-		domain, valid_cert, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
-
 		for child in children:
 			if "http" in child: 
 				self.sites_to_visit.add(child)
 
 	# The thread function.
 	def crawl_url(self, url):
-		c = Checker.connection_checker()
+		c = self.checker
 		d = DomainInfo.domain_info(url)
 
 		domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
