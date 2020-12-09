@@ -48,11 +48,13 @@ class connection_checker():
 
 			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			socket.setdefaulttimeout(1)
-		
-			result = s.connect_ex((domain, port))
-			if (result == 0):
-				ports_open.append(port)
-			s.close()
+			try:
+				result = s.connect_ex((domain, port))
+				if (result == 0):
+					ports_open.append(port)
+				s.close()
+			except Exception:
+				pass
 
 		return ports_open
 

@@ -6,6 +6,7 @@ from bouneschlupp import parser, Classifier
 from Mongo_Client import Client
 import pandas as pd 
 from threading import Thread
+import csv
 
 # Driver for Checker & Classifier interface.
 MONGO_COLLECTION = "domain_info"
@@ -43,28 +44,29 @@ class security_crawler(Thread):
 		with open("sturdycouscous/resources/children-2.txt", "w") as out:
 			out.write("\n".join(str(i) for i in self.sites_to_visit))
 
+	def get_traing_set(self):
+		with open("sturdycouscous/resources/keyword_training.csv") as csvfile:
+			training_sample = csv.reader(csvfile, delimiter=',')
+			for row in training_sample:
+				self.sites_to_visit.add(row[0])
+
 	# The thread function.
 	def crawl_url(self, url):
 		c = Checker.connection_checker()
 		d = DomainInfo.domain_info(url)
-
+		#try:			
 		domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
-
 		if red_list:
 			self.red_list.add(url)
-		
 		d.domain = domain
 		d.valid_cert = valid_cert
 		d.ports_open = ports_open
 		d.tls_versions_supported = tls_versions_supported
 		d.ciphers_supported = ciphers_supported
 		d.expiering_soon = expiering_soon
-
 		# get results from classifier..
 		d.classification = Classifier.Classifier(url).classification
-
 		self.domain_infos.add(d)
-
 		# output to mongo
 		mongo = Client(MONGO_COLLECTION)
 		while(mongo.connect()):
@@ -72,6 +74,8 @@ class security_crawler(Thread):
 			mongo.close()
 			print('db updated with ', url)
 			break
+		#except Exception as e:
+		#	print(e)
 			
 	def sample_run(self):
 		running_threads = []		
@@ -88,8 +92,9 @@ class security_crawler(Thread):
 	def run(self):
 		# obtain first level of history
 		# then add children to visit from first level of history.
-		self.get_txt_history("sturdycouscous/resources/children-2.txt")
+		#self.get_txt_history("sturdycouscous/resources/children-2.txt")
 		#self.get_history(filename="sturdycouscous/history/embarrassing_history.csv")
+		self.get_traing_set()
 		#self.add_children_to_visit()
 		print("about to scan %s websites", len(self.sites_to_visit))
 
