@@ -24,13 +24,15 @@ class connection_checker():
 		# c = Checker.connection_checker()
 
 		domain = self.grab_domain_name(url)
-		print("certificat checker")
+		# print("url: " + url + " domain: " + domain)
+		# print("certificat checker")
 		(valid_cert, expiering_soon) = self.certificate_checker(domain)
-		#print("open port checker")
-		ports_open = []
-		print("tls_version checker")
+		# print("port checking")
+		ports_open = self.port_checker(domain)
+
+		# print("tls_version checker")
 		tls_versions_supported = self.tls_versions_checker(domain)
-		print("cipher supported")
+		# print("cipher supported")
 		ciphers_supported = self.get_supported_ciphers(domain, tls_versions_supported)
 		red_list = False
 
@@ -78,9 +80,12 @@ class connection_checker():
 			expiry_date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
 			valid_cert = datetime.now() < expiry_date
 			expiering_soon = datetime.now() + timedelta(weeks=2) > expiry_date
-
-		except:
-			pass
+		except InterruptedError as e:
+			print(type(e))
+			return (None, None)
+		except socket.gaierror as err:
+			print(err)
+			return (None, None)
 		finally:
 			sslSocket.close()
 			return (valid_cert, expiering_soon)
@@ -127,8 +132,17 @@ class connection_checker():
 			sslSocket = context.wrap_socket(s, server_hostname = domain)
 			sslSocket.connect((domain, port))
 			# print(sslSocket.version())
-		except:
+		except ssl.SSLError as e:
+			# this means that we couldnt connect with the given context
 			success = False
+		except InterruptedError as e:
+			# this means that connection was interrupted
+			print(e)
+			return False
+		except socket.gaierror as err:
+			# this means that URL was malformed
+			print(err)
+			return False
 		finally:
 			sslSocket.close()
 			return success
@@ -175,7 +189,7 @@ class connection_checker():
 		# and force a connection for each of those using that particular cipher, and see if it works or not.
 		supported_cipher_dict = {version: [] for version in tls_versions_supported}
 		all_ciphers = self.get_all_ciphers()
-		
+		# print("tls versions supported " + str(tls_versions_supported))
 		for tls_version in tls_versions_supported:
 
 			if tls_version == "TLSv1.3":
@@ -208,4 +222,5 @@ class connection_checker():
 					finally:
 						sslSocket.close()
 
+		# print("supported_cipher_dict" + str(supported_cipher_dict))
 		return supported_cipher_dict

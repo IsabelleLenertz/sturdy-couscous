@@ -19,16 +19,25 @@ class domain_info():
 		self.classification = {}
 
 	def export_json(self):
-		return {
-				"URL": self.url,
-				"Title": self.title,
-				"Domain": self.domain,
-				"Checker": {
-					"tls_versions_supported": [str.replace(".", "-") for str in self.tls_versions_supported],
-					"open_ports": self.ports_open,
-					"certificate_valid": self.valid_cert,
-					"ciphers_supported": [str.replace(".", "-") for str in self.ciphers_supported],
-					"expiering_soon": self.expiering_soon
+
+		refined_ciphers = {}
+		for tls_version in self.ciphers_supported:
+			refined_ciphers[tls_version.replace(".", "-")] = self.ciphers_supported[tls_version]
+
+		json_dict = {
+			"URL": self.url,
+			"Title": self.title,
+			"Domain": self.domain,
+			"Checker": {
+				"tls_versions_supported": [str.replace(".", "-") for str in self.tls_versions_supported],
+				"open_ports": self.ports_open,
+				"certificate_valid": self.valid_cert,
+				"ciphers_supported": refined_ciphers,
+				"expiering_soon": self.expiering_soon
 				},
-				"Classification": self.classification
-			}
+			"Classification": self.classification
+		}
+
+		return json_dict
+
+
