@@ -18,7 +18,7 @@ import string
 import json
 from pymongo import MongoClient, errors
 
-DOMAIN = 'couscousmongo'
+DOMAIN = 'localhost'
 PORT = 27017
 DB_NAME = "couscous_db"
 COLLECTION = "Categories"
@@ -28,8 +28,6 @@ def connect_client():
         client = MongoClient(
                 host = [ str(DOMAIN) + ":" + str(PORT) ],
                 serverSelectionTimeoutMS = 3000, # 3 second timeout
-                username = "root",
-                password = "root"
         )
         return client
     except errors.ServerSelectionTimeoutError as err:

@@ -16,7 +16,7 @@ class connection_checker():
 
 	def grab_domain_name(self, url):
 		url_split = tldextract.extract(url)
-		return '.'.join(part for part in url_split if part)
+		return url_split.registered_domain
 
 
 	def checker_analysis(self, url):
@@ -24,10 +24,13 @@ class connection_checker():
 		# c = Checker.connection_checker()
 
 		domain = self.grab_domain_name(url)
-
+		print("certificat checker")
 		(valid_cert, expiering_soon) = self.certificate_checker(domain)
-		ports_open = self.port_checker(domain)
+		#print("open port checker")
+		ports_open = []
+		print("tls_version checker")
 		tls_versions_supported = self.tls_versions_checker(domain)
+		print("cipher supported")
 		ciphers_supported = self.get_supported_ciphers(domain, tls_versions_supported)
 		red_list = False
 

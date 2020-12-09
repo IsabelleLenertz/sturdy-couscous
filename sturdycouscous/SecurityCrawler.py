@@ -102,15 +102,32 @@ class security_crawler(Thread):
 
 		# start each thread
 		for url in self.sites_to_visit:
-			if len(url) > 1:
-				t = Thread(target=self.crawl_url, args=(url,))
-				t.start()
-				#print("Thread %s started to evaluate %s" ,  str(t) , url)
-				running_threads.append(t)
-
-		# joining threads
-		for t in running_threads:
-			t.join() 
+			print("**********  ", url, " **********")
+			print("checker runnin")
+			#c = Checker.connection_checker()
+			d = DomainInfo.domain_info(url)
+			#try:			
+			'''domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
+			if red_list:
+				self.red_list.add(url)
+			d.domain = domain
+			d.valid_cert = valid_cert
+			d.ports_open = ports_open
+			d.tls_versions_supported = tls_versions_supported
+			d.ciphers_supported = ciphers_supported
+			d.expiering_soon = expiering_soon
+			# get results from classifier..'''
+			print("Classifier Runnin")
+			d.classification = Classifier.Classifier(url).classification
+			print("done classifying")
+			self.domain_infos.add(d)
+			# output to mongo
+			mongo = Client(MONGO_COLLECTION)
+			while(mongo.connect()):
+				mongo.insert(d.export_json())
+				mongo.close()
+				print('db updated with ', url)
+				break 
  
 if __name__ == "__main__":
 	sc = security_crawler()

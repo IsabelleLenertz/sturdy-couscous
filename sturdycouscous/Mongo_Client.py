@@ -1,7 +1,7 @@
 from logging import error
 from pymongo import MongoClient, collection, errors
 
-DOMAIN = 'couscousmongo'
+DOMAIN = 'localhost'
 PORT = 27017
 DB_NAME = "couscous_db"
 
@@ -15,8 +15,6 @@ class Client:
             self.client = MongoClient(
                     host = [ str(DOMAIN) + ":" + str(PORT) ],
                     serverSelectionTimeoutMS = 3000, # 3 second timeout
-                    username = "root",
-                    password = "root"
             )
             db = self.client[DB_NAME]
             self.collection = db[self.collection_name]
