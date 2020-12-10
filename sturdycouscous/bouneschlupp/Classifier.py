@@ -12,6 +12,8 @@ import string
 import tldextract
 import regex as re
 
+import logging
+
 DOMAIN = 'couscousmongo'
 PORT = 27017
 DB_NAME = "couscous_db"
@@ -37,15 +39,21 @@ def connect_client():
         return None
 
 def clean_tokens(tags):
+    logging.info("****running clean_tokens on tag count:" + str(len(tags)))
     tokens = []
     for tag in tags:
+        logging.info("****Extending and Tokenizing: " + str(tag[:1000]))
         tokens.extend(word_tokenize(str(tag.string)))
+    logging.info("****Tags tokenized")
     tokens = [w.lower() for w in tokens]
     table = str.maketrans('', '', string.punctuation)
     stripped = [w.translate(table) for w in tokens]
+    logging.info("****Tokens stripped")
     words = [word for word in stripped if word.isalpha()]
     stop_words = set(stopwords.words('english'))
+    logging.info("****Extracting words")
     words = [w for w in words if not w in stop_words]
+    logging.info("****Stemming")
     # Stemming
     porter = PorterStemmer()
     return [porter.stem(word) for word in words]
@@ -62,6 +70,12 @@ class Classifier:
 
     def __init__(self, url):
         self.url = url
+
+        logging.basicConfig(
+                format='%(asctime)s %(message)s',
+                level=logging.INFO,
+                datefmt='%H:%M:%S')
+        logging.info("****Classifier Init")
         
         # First, get the page content and parse into a beautiful tree
         response = requests.get("https://www."+ url.replace('https://', '').replace('www.', ''))
@@ -70,6 +84,7 @@ class Classifier:
                 self.content = BeautifulSoup(response.content, 'lxml')
                 # Look for the keywords indicated by author
                 self.page_content = clean_tokens(self.content.findAll(self.TAG_FILTER))
+                logging.info("****Done stemming")
             else:
                 print(response.status_code, ": ", response.reason)
                 raise Exception(response.status_code + response.reason)
@@ -82,6 +97,7 @@ class Classifier:
         client = connect_client()
         db = client[DB_NAME]
         collection = db[COLLECTION]
+        logging.info("****Iterating through categories")
         for category in CATEGORIES:
             category_keywords = collection.find_one({'_id': category}).get('keywords')
             counter = 0
@@ -89,6 +105,7 @@ class Classifier:
                 if word in category_keywords:
                     counter += category_keywords[word] 
             evaluation[category] = counter/len(self.page_content)*100
+        logging.info("****Finished iterating through categories")
         # Returns the category with the highest sco
         tld = tldextract.extract(self.url)
         evaluation["other"] = evaluation['other']/3
@@ -99,3 +116,4 @@ class Classifier:
             'categories': categories,
             'data': evaluation
         }
+        logging.info("***Returning classification***")

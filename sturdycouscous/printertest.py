@@ -15,4 +15,6 @@ inputdict = {'URL': 'https://www.kqed.org/coronavirusliveupdates', 'Title': '', 
 
 # Printer().tally_categories()
 
+# Printer().dump_db()
+
 Printer().output_report()

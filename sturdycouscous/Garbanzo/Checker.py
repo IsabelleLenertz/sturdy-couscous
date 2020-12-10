@@ -10,8 +10,13 @@ import copy
 from datetime import datetime, timedelta
 import tldextract
 
-class connection_checker():
+import logging
 
+class connection_checker():
+	logging.basicConfig(    
+	format='%(asctime)s %(message)s',    
+	level=logging.INFO,    
+	datefmt='%H:%M:%S')    
 	# Copied over from Security Crawler.
 
 	def grab_domain_name(self, url):
@@ -21,18 +26,24 @@ class connection_checker():
 
 	def checker_analysis(self, url):
 
+		logging.info("####Staring Analysis")
 		# c = Checker.connection_checker()
 
 		domain = self.grab_domain_name(url)
 
+		logging.info("####Checking Certificate")
 		(valid_cert, expiering_soon) = self.certificate_checker(domain)
+		logging.info("####Checking Ports")
 		ports_open = self.port_checker(domain)
+		logging.info("####Checking TLS Versions")
 		tls_versions_supported = self.tls_versions_checker(domain)
+		logging.info("####Checking Ciphers")
 		ciphers_supported = self.get_supported_ciphers(domain, tls_versions_supported)
 		red_list = False
 
 		# redlist websites supporting tls v1 and v1.1
-		red_list = ('TLSv1.1' in tls_versions_supported) or ('TLSv1.0' in tls_versions_supported) or ("https" not in url)
+		red_list = ('TLSv1_1' in tls_versions_supported) or ('TLSv1_0' in tls_versions_supported) or ("https" not in url)
+		logging.info("####Checker Analysis Finished")
 
 		return domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list
 
