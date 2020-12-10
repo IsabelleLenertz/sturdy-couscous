@@ -1,9 +1,6 @@
 from logging import error
 from pymongo import MongoClient, collection, errors
-
-DOMAIN = 'couscousmongo'
-PORT = 27017
-DB_NAME = "couscous_db"
+import Utils
 
 class Client:
     
@@ -13,12 +10,12 @@ class Client:
     def connect(self):
         try:
             self.client = MongoClient(
-                    host = [ str(DOMAIN) + ":" + str(PORT) ],
+                    host = [ str(Utils.DOMAIN) + ":" + str(Utils.PORT) ],
                     serverSelectionTimeoutMS = 3000, # 3 second timeout
                     username = "root",
                     password = "root"
             )
-            db = self.client[DB_NAME]
+            db = self.client[Utils.DB_NAME]
             self.collection = db[self.collection_name]
             return True
         except errors.ServerSelectionTimeoutError as err:

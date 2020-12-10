@@ -7,6 +7,8 @@
     <h1>-<h6>
     <legend>
     <img alt="   ">"""
+import sys
+sys.path.append("/usr/src/app/sturdy-couscous/sturdycouscous")
 
 import csv
 import requests
@@ -17,24 +19,9 @@ from nltk.corpus import stopwords
 import string
 import json
 from pymongo import MongoClient, errors
+import Utils
+import time
 
-DOMAIN = 'couscousmongo'
-PORT = 27017
-DB_NAME = "couscous_db"
-COLLECTION = "Categories"
-
-def connect_client():
-    try:
-        client = MongoClient(
-                host = [ str(DOMAIN) + ":" + str(PORT) ],
-                serverSelectionTimeoutMS = 3000, # 3 second timeout
-                username = "root",
-                password = "root"
-        )
-        return client
-    except errors.ServerSelectionTimeoutError as err:
-        print("pymongo ERROR: ", err)
-        return None
 
 '''
 {
@@ -68,38 +55,36 @@ def clean_tokens(text):
     porter = PorterStemmer()
     return [porter.stem(word) for word in words]
 
-client = connect_client()
-db = client[DB_NAME]
-collection = db[COLLECTION]
-collection.drop()
-
-with open("sturdycouscous/resources/keyword_training.csv") as csvfile:
-    training_sample = csv.reader(csvfile, delimiter=',')
-    for row in training_sample:
-        try:
-            # Get and parse HTML content
-            print("https://www."+ row[0].replace('https://', '').replace('www.', ''))
-            response = requests.get("https://www."+ row[0].replace('https://', '').replace('www.', ''))
-            if response.status_code == 200:
-                content = BeautifulSoup(response.content, 'lxml')
-                
-                # Look for the keywords indicated by author
-                metadata = content.head.find("meta", attrs = {'name':'keywords'})
-                if not metadata: 
-                    metadata = content.head.find("meta", attrs = {'name':'Keywords'})
-                if metadata:
-                    key_words = clean_tokens(metadata.get('content'))
-                    update_db(row[1], collection, key_words)
-                
-                # Look for description and extracts keywords
-                description_tag = content.head.find("meta", attrs = {'name':'description'})
-                if not description_tag:
-                    description_tag = content.head.find("meta", attrs = {'name':'Description'})
-                if description_tag:
-                    key_words = clean_tokens(description_tag.get('content'))
-                    update_db(row[1], collection, key_words) 
-            else:
-                print(response.status_code, ": ", response.reason)
-                raise Exception()
-        except BaseException as e:
-            print(type(e))
+def train(filename):
+    with open(filename) as csvfile:
+        training_sample = csv.reader(csvfile, delimiter=',')
+        with Utils.get_client() as client:
+            db = client[Utils.DB_NAME]
+            collection = db[Utils.CLASSIFIER_COLLECTION]
+            collection.drop()
+            for row in training_sample:
+                try:
+                    # Get and parse HTML content
+                    response = requests.get("https://www." + Utils.grab_domain_name(row[0]), timeout=2)
+                    if response.status_code == 200:
+                        content = BeautifulSoup(response.content, 'lxml')
+                        
+                        # Look for the keywords indicated by author
+                        metadata = content.head.find("meta", attrs = {'name':'keywords'})
+                        if not metadata: 
+                            metadata = content.head.find("meta", attrs = {'name':'Keywords'})
+                        if metadata:
+                            key_words = clean_tokens(metadata.get('content'))
+                            update_db(row[1], collection, key_words)
+                        
+                        # Look for description and extracts keywords
+                        description_tag = content.head.find("meta", attrs = {'name':'description'})
+                        if not description_tag:
+                            description_tag = content.head.find("meta", attrs = {'name':'Description'})
+                        if description_tag:
+                            key_words = clean_tokens(description_tag.get('content'))
+                            update_db(row[1], collection, key_words) 
+                    else:
+                        print(response.status_code, ": ", response.reason)
+                except Exception as e:
+                    print(type(e))

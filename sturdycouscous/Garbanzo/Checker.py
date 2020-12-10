@@ -3,6 +3,10 @@
 # 2) Check TLS versions supported
 # 3) Look for open ports
 # 4) Get all ciphers supported 
+import sys
+sys.path.append("/usr/src/app/sturdy-couscous/sturdycouscous")
+
+import Utils
 import socket, ssl
 import re
 import requests
@@ -12,31 +16,34 @@ import tldextract
 
 class connection_checker():
 
-	# Copied over from Security Crawler.
+	def checker_analysis(self, domain):
+		valid_cert = None
+		expiering_soon = None
+		ports_open = []
+		tls_versions_supported = []
+		ciphers_supported = []
+		red_list = None
 
-	def grab_domain_name(self, url):
-		url_split = tldextract.extract(url)
-		return '.'.join(part for part in url_split if part)
-
-
-	def checker_analysis(self, url):
-
-		# c = Checker.connection_checker()
-
-		domain = self.grab_domain_name(url)
-
-		(valid_cert, expiering_soon) = self.certificate_checker(domain)
-		ports_open = self.port_checker(domain)
-		tls_versions_supported = self.tls_versions_checker(domain)
-		ciphers_supported = self.get_supported_ciphers(domain, tls_versions_supported)
-		red_list = False
+		try:
+			(valid_cert, expiering_soon) = self.certificate_checker(domain)
+		except Exception as e:
+			print(e)
+		try:
+			ports_open = self.port_checker(domain)
+		except Exception as e:
+			print(e)
+		try:
+			tls_versions_supported = self.tls_versions_checker(domain)
+		except Exception as e:
+			print(e)
+		try:
+			ciphers_supported = self.get_supported_ciphers(domain, tls_versions_supported)
+		except Exception as e:
+			print(e)
 
 		# redlist websites supporting tls v1 and v1.1
-		red_list = ('TLSv1.1' in tls_versions_supported) or ('TLSv1.0' in tls_versions_supported) or ("https" not in url)
-
+		red_list = ('TLSv1.1' in tls_versions_supported) or ('TLSv1.0' in tls_versions_supported) or ("https" not in domain)
 		return domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list
-
-
 
 	# Returns list of open ports.
 	def port_checker(self, domain):
@@ -48,11 +55,13 @@ class connection_checker():
 
 			s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			socket.setdefaulttimeout(1)
-		
-			result = s.connect_ex((domain, port))
-			if (result == 0):
-				ports_open.append(port)
-			s.close()
+			try:
+				result = s.connect_ex((domain, port))
+				if (result == 0):
+					ports_open.append(port)
+				s.close()
+			except Exception:
+				pass
 
 		return ports_open
 
@@ -73,9 +82,12 @@ class connection_checker():
 			expiry_date = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
 			valid_cert = datetime.now() < expiry_date
 			expiering_soon = datetime.now() + timedelta(weeks=2) > expiry_date
-
-		except:
-			pass
+		except InterruptedError as e:
+			print(type(e))
+			return (None, None)
+		except socket.gaierror as err:
+			print(err)
+			return (None, None)
 		finally:
 			sslSocket.close()
 			return (valid_cert, expiering_soon)
@@ -122,8 +134,17 @@ class connection_checker():
 			sslSocket = context.wrap_socket(s, server_hostname = domain)
 			sslSocket.connect((domain, port))
 			# print(sslSocket.version())
-		except:
+		except ssl.SSLError as e:
+			# this means that we couldnt connect with the given context
 			success = False
+		except InterruptedError as e:
+			# this means that connection was interrupted
+			print(e)
+			return False
+		except socket.gaierror as err:
+			# this means that URL was malformed
+			print(err)
+			return False
 		finally:
 			sslSocket.close()
 			return success
@@ -170,7 +191,7 @@ class connection_checker():
 		# and force a connection for each of those using that particular cipher, and see if it works or not.
 		supported_cipher_dict = {version: [] for version in tls_versions_supported}
 		all_ciphers = self.get_all_ciphers()
-		
+		# print("tls versions supported " + str(tls_versions_supported))
 		for tls_version in tls_versions_supported:
 
 			if tls_version == "TLSv1.3":
@@ -203,4 +224,5 @@ class connection_checker():
 					finally:
 						sslSocket.close()
 
+		# print("supported_cipher_dict" + str(supported_cipher_dict))
 		return supported_cipher_dict
