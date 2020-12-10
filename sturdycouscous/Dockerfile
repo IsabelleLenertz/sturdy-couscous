@@ -11,6 +11,3 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir sturdycouscous
 COPY . sturdycouscous/ 
 
-CMD ["python", "sturdycouscous/SecurityCrawler.py"]
-
-#CMD python Mongo_Client.py
