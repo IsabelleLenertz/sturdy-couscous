@@ -3,6 +3,9 @@ sys.path.append("/usr/src/app/sturdy-couscous/sturdycouscous")
 import Utils, SecurityCrawler
 from bouneschlupp import parser, ClassifierTraining
 import csv
+import nltk; 
+nltk.download('stopwords')
+nltk.download('punkt')
 
 
 ''' call to generate the txt file with the domains to evaluate
@@ -24,17 +27,19 @@ import csv
 
 def get_dataset(filename, generations = 1, is_csv = False, index = -1, separator=','):
     urls = set()
+    children = set()
     if not is_csv:
         with open(filename) as file:
             lines = file.readlines()
             for line in lines:
-                urls.add(Utils.grab_domain_name(line.strip()))
+                urls.add(line.strip())
+                children.add(line[index].strip())
     else:
         with open(filename) as file:
             csv_content = csv.reader(file, delimiter=separator)            
             for line in csv_content:
                 urls.add(line[index].strip())
-    children = set()
+                children.add(line[index].strip())
     no_data = set()
     for url in urls:
         url_parser = parser.Parser(url)
@@ -43,11 +48,11 @@ def get_dataset(filename, generations = 1, is_csv = False, index = -1, separator
 
     with open(Utils.CHILDREN_FILE, 'w') as out:
         for url in children:
-            out.write(url)
+            out.write(url + "\n")
     
     with open (Utils.NO_DATA_FILE, 'w') as out:
         for url in no_data:
-            out.write(url)
+            out.write(url + "\n")
 
     return (children, no_data)
 
@@ -68,5 +73,5 @@ def run_analysis(filename = Utils.CHILDREN_FILE):
     engine.run()
 
 #train_classifier()
-get_dataset("sturdycouscous/resources/children-small.txt", 1)
-#run_analysis("sturdycouscous/resources/children-small.txt")
+#get_dataset("sturdycouscous/resources/isa_last_week.csv", 0, True, 5)
+run_analysis("sturdycouscous/resources/children.txt")

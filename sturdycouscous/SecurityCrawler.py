@@ -63,7 +63,7 @@ class security_crawler(Thread):
 			t.join()
 
 	def run(self):
-		print("about to scan %s websites", len(self.sites_to_visit))
+		print("About to scan %s websites", len(self.sites_to_visit))
 		mongo = Client(MONGO_COLLECTION)
 		c = Checker.connection_checker()
 
@@ -79,7 +79,7 @@ class security_crawler(Thread):
 					self.red_list.add(url)
 			else:
 				d.url = url
-			print("Classifier unning")
+			print("Classifier running")
 			d.classification = Classifier.Classifier(url).classification
 			print("Analysis complete")
 			self.visited_domains[domain] = d
