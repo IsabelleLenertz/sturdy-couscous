@@ -13,13 +13,14 @@ MONGO_COLLECTION = "domain_info"
 
 class security_crawler(Thread):
 
-	def __init__(self):
+	def __init__(self, urls):
 		
 		self.raw_history = set()
-		self.sites_to_visit = set()	
+		self.sites_to_visit = urls	
 		self.domain_infos = set()
 		self.red_list = set()
 		self.db_client = None
+		self.visited_urls = set()
 	
 	def get_history(self, filename):
 		df = pd.read_csv(filename)
@@ -111,61 +112,25 @@ class security_crawler(Thread):
 			t.join()
 
 	def run(self):
-
-		self.get_txt_history("sturdycouscous/resources/children-med.txt")
-
 		print("about to scan %s websites", len(self.sites_to_visit))
-
+		mongo = Client(MONGO_COLLECTION)
 		# removing threads.
 		for url in self.sites_to_visit:
-			print("**********  ", url, " **********")
-			c = Checker.connection_checker()
-			
-			# checking if the domain has already been examined.
-			d = self.check_domain_exist(url)
-
-			# if domain has not already been examined, perform TLS checks.
-			if d is None:
-				
+			if(url not in self.visited_urls):
+				print("**********  ", url, " **********")
+				c = Checker.connection_checker()
 				d = DomainInfo.domain_info(url)
-				
-				# putting try/catch block in here for the time being
-				try:
-					print("checker runnin")			
-					domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list = c.checker_analysis(url)
+				print("Checker running")			
+				d.domain, d.valid_cert, d.expiering_soon, d.ports_open, d.tls_versions_supported, d.ciphers_supported, red_list = c.checker_analysis(url)
+				if red_list:
+					self.red_list.add(url)
+				print("Classifier unning")
+				d.classification = Classifier.Classifier(url).classification
+				print("Analysis complete")
+				self.visited_urls.add(url)
 
-					d.domain = domain
-					d.valid_cert = valid_cert
-					d.ports_open = ports_open
-					d.tls_versions_supported = tls_versions_supported
-					d.ciphers_supported = ciphers_supported
-					d.expiering_soon = expiering_soon
-
-					if red_list:
-						self.red_list.add(url)
-
-				except Exception as e:
-					print(e)
-
-			# Classifier will be run on the url, not on the domain. 
-			# Therefore, it should be run for every URL.
-			print("Classifier Runnin")
-			d.classification = Classifier.Classifier(url).classification
-			print("done classifying")
-
-			self.domain_infos.add(d)
-		# endfor
-
-		print("final results: " + str(len(self.domain_infos)) + " sites visited")
-
-		# write to mongo
-		mongo = Client(MONGO_COLLECTION)
-		for info in self.domain_infos:
-			while(mongo.connect()):
-				mongo.insert(info.export_json())
-		mongo.close()
-
- 
-if __name__ == "__main__":
-	sc = security_crawler()
-	sc.run()
+				while(mongo.connect()):
+					mongo.insert(d.export_json())
+					mongo.close()
+					break
+		print("Final results: " + str(len(self.visited_urls)) + " sites visited")

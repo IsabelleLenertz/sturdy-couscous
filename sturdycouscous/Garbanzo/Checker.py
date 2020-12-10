@@ -3,6 +3,10 @@
 # 2) Check TLS versions supported
 # 3) Look for open ports
 # 4) Get all ciphers supported 
+import sys
+sys.path.append("/usr/src/app/sturdy-couscous/sturdycouscous")
+
+import Utils
 import socket, ssl
 import re
 import requests
@@ -12,36 +16,34 @@ import tldextract
 
 class connection_checker():
 
-	# Copied over from Security Crawler.
+	def checker_analysis(self, domain):
+		valid_cert = None
+		expiering_soon = None
+		ports_open = []
+		tls_versions_supported = []
+		ciphers_supported = []
+		red_list = None
 
-	def grab_domain_name(self, url):
-		url_split = tldextract.extract(url)
-		return url_split.registered_domain
-
-
-	def checker_analysis(self, url):
-
-		# c = Checker.connection_checker()
-
-		domain = self.grab_domain_name(url)
-		# print("url: " + url + " domain: " + domain)
-		# print("certificat checker")
-		(valid_cert, expiering_soon) = self.certificate_checker(domain)
-		# print("port checking")
-		ports_open = self.port_checker(domain)
-
-		# print("tls_version checker")
-		tls_versions_supported = self.tls_versions_checker(domain)
-		# print("cipher supported")
-		ciphers_supported = self.get_supported_ciphers(domain, tls_versions_supported)
-		red_list = False
+		try:
+			(valid_cert, expiering_soon) = self.certificate_checker(domain)
+		except Exception as e:
+			print(e)
+		try:
+			ports_open = self.port_checker(domain)
+		except Exception as e:
+			print(e)
+		try:
+			tls_versions_supported = self.tls_versions_checker(domain)
+		except Exception as e:
+			print(e)
+		try:
+			ciphers_supported = self.get_supported_ciphers(domain, tls_versions_supported)
+		except Exception as e:
+			print(e)
 
 		# redlist websites supporting tls v1 and v1.1
 		red_list = ('TLSv1.1' in tls_versions_supported) or ('TLSv1.0' in tls_versions_supported) or ("https" not in url)
-
 		return domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list
-
-
 
 	# Returns list of open ports.
 	def port_checker(self, domain):
