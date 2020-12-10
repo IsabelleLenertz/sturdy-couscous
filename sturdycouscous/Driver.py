@@ -6,7 +6,8 @@ import csv
 import nltk; 
 nltk.download('stopwords')
 nltk.download('punkt')
-
+import Printer
+import ast
 
 ''' call to generate the txt file with the domains to evaluate
     if csv is set to True, an index needs to be specified
@@ -14,8 +15,8 @@ nltk.download('punkt')
     arguments:
         filename - string - file containing the borwsing history
         generations - positive integer - number of generations for the children url Default 1)
-        csv - boolean - True is the file is a csv (Default false)
-        index - positive integer - index of the url in the csv file (Default -1)
+        csv - boolean - True is the file is a csv (Default True)
+        index - positive integer - index of the url in the csv file (Default 5)
         separator - string/char - separator used in the csv (Default ',')
     return: (children, no_data)
         children - set of strings - url from the decsendents
@@ -25,7 +26,7 @@ nltk.download('punkt')
         sturdycouscous/resources/no_data_urls.txt
 '''
 
-def get_dataset(filename, generations = 1, is_csv = False, index = -1, separator=','):
+def get_dataset(filename = Utils.HISTORY_CSV, generations = 1, is_csv = True, index = 5, separator=','):
     urls = set()
     children = set()
     if not is_csv:
@@ -72,6 +73,42 @@ def run_analysis(filename = Utils.CHILDREN_FILE):
     engine = SecurityCrawler.security_crawler(urls)
     engine.run()
 
-#train_classifier()
-#get_dataset("sturdycouscous/resources/isa_last_week.csv", 0, True, 5)
-run_analysis("sturdycouscous/resources/children.txt")
+def export_database():
+    client = Utils.get_client()
+    db = client[Utils.DB_NAME]
+    domain_collection = db[Utils.DOMAIN_COLLECTION]
+    class_collection = db[Utils.CLASSIFIER_COLLECTION]
+
+    domains = list(domain_collection.find({}, {  "_id": 0 }))
+    categories = list(class_collection.find())
+    with open("db/domain_info.json", "w") as out:
+        out.write(json.dumps(domains))
+    with open("db/categories.json", "w") as out:
+        out.write(json.dumps(categories))
+    client.close()
+
+def import_data(mongo_collection = Utils.DOMAIN_COLLECTION):
+    client = Mongo_Client.Client(mongo_collection)
+    try:
+        if client.connect(): 
+            with open('db_dump', 'r') as  data_file:
+                data = ast.literal_eval(data_file.readline().replace('true','True').replace('false','False').replace('null','None'))
+                for row in data:    
+                    client.collection.insert(row)    
+        else:
+            print("Could not connect to database's ", mongo_collection)
+    finally:
+        client.close()
+    
+
+def import_classification_data(mongo_collection = Utils.CLASSIFIER_COLLECTION):
+    import_data(mongo_collection)
+
+def print_report():
+    Printer().output_report()
+
+def run_all():
+    train_classifier()
+    get_dataset(HISTORY_CSV, 0, True, 5)
+    run_analysis(CHILDREN_FILE)
+    Printer().output_report()
