@@ -87,11 +87,11 @@ def export_database():
         out.write(json.dumps(categories))
     client.close()
 
-def import_data(mongo_collection = Utils.DOMAIN_COLLECTION):
+def import_data(mongo_collection = Utils.DOMAIN_COLLECTION, filename = Utils.DOMAIN_JSON):
     client = Mongo_Client.Client(mongo_collection)
     try:
         if client.connect(): 
-            with open('db_dump', 'r') as  data_file:
+            with open(filename, 'r') as  data_file:
                 data = ast.literal_eval(data_file.readline().replace('true','True').replace('false','False').replace('null','None'))
                 for row in data:    
                     client.collection.insert(row)    
@@ -101,8 +101,8 @@ def import_data(mongo_collection = Utils.DOMAIN_COLLECTION):
         client.close()
     
 
-def import_classification_data(mongo_collection = Utils.CLASSIFIER_COLLECTION):
-    import_data(mongo_collection)
+def import_classification_data(mongo_collection = Utils.CLASSIFIER_COLLECTION, filename = Utils.CATEGORIES_JSON):
+    import_data(mongo_collection, filename)
 
 def print_report():
     Printer().output_report()
