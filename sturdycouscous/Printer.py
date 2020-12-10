@@ -5,7 +5,6 @@ class Printer():
     def __init__(self):
         self.client = DBClient()
         self.outputfile = open('output.txt', "w")
-
     def write_to_file(self, output):
         pass
         self.outputfile.writelines(output)
@@ -15,13 +14,14 @@ class Printer():
         output = []
         for row in self.client.column.find({}, fields):
             output.append(row)
-        print(output)
         return output
 
     def dump_db(self):
-        for row in self.client.column.find({}, {'url', 'title'}):
-            record = tls_record().parse_record(row)
-            write_to_file(record.dump_dict())
+        for row in self.client.column.find({}):
+            print(row)
+            pass
+            # record = tls_record().parse_record(row)
+            # write_to_file(record.dump_dict())
 
     def print_record_count(self):
         return len(self.mongo_query({'_id'}))
@@ -65,16 +65,20 @@ class Printer():
                             if 'ciphers_supported' not in tally[version]:
                                 tally[version]['ciphers_supported'] = {cipher: 0}
                             else:
-                                tally[version]['ciphers_supported'][cipher] += 1
+                                if cipher not in tally[version]['ciphers_supported']:
+                                    tally[version]['ciphers_supported'][cipher] = 0
+                                else:
+                                    tally[version]['ciphers_supported'][cipher] += 1
 
         # Build output string
         tally_output = 'SSL Version Tally:\n'
         for result in tally:
-            tally_output += "{0:25} {1}\n".format(result + ":", str(tally[result]['count']))
+            tally_output += "{0:35} {1}\n".format(result + ":", str(tally[result]['count']))
             if 'ciphers_supported' in tally[result]:
                 tally_output += "--Ciphers: \n"
                 for cipher in tally[result]['ciphers_supported']:
-                    tally_output += "--{0:15} {1}\n".format(cipher + ":", str(tally[result]['ciphers_supported'][cipher]))
+                    if cipher in tally[result]['ciphers_supported']:
+                        tally_output += "--{0:33} {1}\n".format("--" + cipher + ":", str(tally[result]['ciphers_supported'][cipher]))
         
         return(tally_output)
 
@@ -100,24 +104,27 @@ class Printer():
         return tally_output
 
     def tally_categories(self):
-        ####WARNING
-        ####NOT YET TESTED AGAINST REAL DATA
         tally = {}
         query_filter = {'Classification.categories'}
 
         # Query and tally data
         for row in self.mongo_query(query_filter):
-            categories = row['Classification']['categories']
-            for category in categories:
+            if 'Classification' not in row:
+                continue
+            categories = row['Classification']
+            if 'categories' not in row['Classification']:
+                continue
+            for category in row['Classification']['categories']:
                 if category not in tally:
                     tally[category] = 1
                 else:
                     tally[category] += 1
 
+        
         # Build output string
         tally_output = "Category Tally:\n"
         for result in tally:
-            tally_output += "{0:20} {1}".format(result + ":" + str(tally[result]))
+            tally_output += "{0:20} {1}\n".format(result + ":",  str(tally[result]))
 
         return tally_output
         
@@ -150,9 +157,8 @@ class Printer():
         outfile.writelines(self.invalid_cert_stats())
         outfile.writelines(padding)
         outfile.writelines(self.tally_open_ports())
-        ####Commented out until tested against actual data
-        # outfile.writelines(padding)
-        # outfile.writelines(self.tally_categories())
+        outfile.writelines(padding)
+        outfile.writelines(self.tally_categories())
         outfile.write('\n')
         outfile.close()
         print("************************ REPORT WRITTEN TO output.txt *************************")
