@@ -1,6 +1,6 @@
 import sys
 sys.path.append("./sturdycouscous")
-
+import Utils
 from enum import Enum
 from bs4 import BeautifulSoup
 from pymongo import MongoClient, errors, results
@@ -43,7 +43,7 @@ class Classifier:
         self.classification = None
         try:
 	    # First, get the page content and parse into a beautiful tree
-            response = requests.get("https://www." + url, timeout=0.5)
+            response = requests.get(url, timeout=5)
             if response.status_code == 200:
                 self.content = BeautifulSoup(response.content, 'lxml')
                 # Look for the keywords indicated by author
@@ -52,14 +52,14 @@ class Classifier:
                 evaluation = {}
                 # Count keywords in each category
                 client = Utils.get_client()
-                db = client[DB_NAME]
+                db = client[Utils.DB_NAME]
                 collection = db[Utils.CLASSIFIER_COLLECTION]
                 for category in CATEGORIES:
-                    category_keywords = collection.find({'_id': category}).next().get('keywords')
+                    category_keywords = collection.find_one({'_id': category}).get('keywords')
                     counter = 0
-                for word in self.page_content:
-                    if word in category_keywords:
-                        counter += category_keywords[word] 
+                    for word in self.page_content:
+                        if word in category_keywords:
+                            counter += category_keywords[word] 
                     evaluation[category] = counter/len(self.page_content)*100
                 # Returns the category with the highest sco
                 tld = tldextract.extract(self.url)
@@ -71,6 +71,7 @@ class Classifier:
                     'categories': categories,
                     'data': evaluation
                 }
+
             else:
                 print(response.status_code, ": ", response.reason)
         except Exception as e:

@@ -68,4 +68,5 @@ def run_analysis(filename = Utils.CHILDREN_FILE):
     engine.run()
 
 #train_classifier()
-get_dataset(Utils.TRAINING_FILE, 1, True, 0)
+#get_dataset(Utils.TRAINING_FILE, 1, True, 0)
+run_analysis("sturdycouscous/resources/children-small.txt")

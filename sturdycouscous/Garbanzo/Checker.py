@@ -42,7 +42,7 @@ class connection_checker():
 			print(e)
 
 		# redlist websites supporting tls v1 and v1.1
-		red_list = ('TLSv1.1' in tls_versions_supported) or ('TLSv1.0' in tls_versions_supported) or ("https" not in url)
+		red_list = ('TLSv1.1' in tls_versions_supported) or ('TLSv1.0' in tls_versions_supported) or ("https" not in domain)
 		return domain, valid_cert, expiering_soon, ports_open, tls_versions_supported, ciphers_supported, red_list
 
 	# Returns list of open ports.

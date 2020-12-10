@@ -7,6 +7,7 @@ from Mongo_Client import Client
 import pandas as pd 
 from threading import Thread
 import csv
+import Utils
 
 # Driver for Checker & Classifier interface.
 MONGO_COLLECTION = "domain_info"
@@ -20,57 +21,7 @@ class security_crawler(Thread):
 		self.domain_infos = set()
 		self.red_list = set()
 		self.db_client = None
-		self.visited_urls = set()
-	
-	def get_history(self, filename):
-		df = pd.read_csv(filename)
-		
-		for indx, row in df.iterrows():
-			url = row['url']
-			if url not in self.raw_history:
-				self.raw_history.add(url)
-				self.sites_to_visit.add(url)
-
-	def get_txt_history(self, filename):
-		with open(filename) as file:
-			lines = file.readlines()
-			for line in lines:
-				self.sites_to_visit.add(line.strip())
-
-
-	def check_domain_exist(self, url):
-
-		domain = Checker.connection_checker().grab_domain_name(url)
-
-		for d in self.domain_infos:
-			if d.domain == domain:
-				new = DomainInfo.domain_info(url)
-				
-				new.domain = d.domain
-				new.title = d.title
-				new.tls_versions_supported = d.tls_versions_supported
-				new.ports_open = d.ports_open
-				new.ciphers_supported = d.ciphers_supported
-				new.valid_cert = d.valid_cert
-				new.expiering_soon = d.expiering_soon
-
-				return new
-
-		return None
-
-	def add_children_to_visit(self):
-		# create "parser" objects for each of the urls.
-		for link in self.raw_history:
-			print("processing children of ", link)
-			self.sites_to_visit.update(parser.Parser(link).get_link_from_descendent(1))
-		with open("sturdycouscous/resources/children-2.txt", "w") as out:
-			out.write("\n".join(str(i) for i in self.sites_to_visit))
-
-	def get_traing_set(self):
-		with open("sturdycouscous/resources/keyword_training.csv") as csvfile:
-			training_sample = csv.reader(csvfile, delimiter=',')
-			for row in training_sample:
-				self.sites_to_visit.add(row[0])
+		self.visited_domains = {}
 
 	# The thread function.
 	def crawl_url(self, url):
@@ -114,23 +65,26 @@ class security_crawler(Thread):
 	def run(self):
 		print("about to scan %s websites", len(self.sites_to_visit))
 		mongo = Client(MONGO_COLLECTION)
-		# removing threads.
+		c = Checker.connection_checker()
+
 		for url in self.sites_to_visit:
-			if(url not in self.visited_urls):
-				print("**********  ", url, " **********")
-				c = Checker.connection_checker()
+			print("**********  ", url, " **********")
+			domain = Utils.grab_domain_name(url)
+			d = self.visited_domains.get(domain)
+			if(d is None):
 				d = DomainInfo.domain_info(url)
 				print("Checker running")			
-				d.domain, d.valid_cert, d.expiering_soon, d.ports_open, d.tls_versions_supported, d.ciphers_supported, red_list = c.checker_analysis(url)
+				d.domain, d.valid_cert, d.expiering_soon, d.ports_open, d.tls_versions_supported, d.ciphers_supported, red_list = c.checker_analysis(domain)
 				if red_list:
 					self.red_list.add(url)
-				print("Classifier unning")
-				d.classification = Classifier.Classifier(url).classification
-				print("Analysis complete")
-				self.visited_urls.add(url)
+			else:
+				d.url = url
+			print("Classifier unning")
+			d.classification = Classifier.Classifier(url).classification
+			print("Analysis complete")
+			self.visited_domains[domain] = d
+			mongo = Client(Utils.DOMAIN_COLLECTION)
+			mongo.connect()
+			mongo.insert(d.export_json())
 
-				while(mongo.connect()):
-					mongo.insert(d.export_json())
-					mongo.close()
-					break
-		print("Final results: " + str(len(self.visited_urls)) + " sites visited")
+		print("Analysis Done")

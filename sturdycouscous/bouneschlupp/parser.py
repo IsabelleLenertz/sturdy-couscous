@@ -26,12 +26,22 @@ class Parser:
         self.no_data = set()
         self.tags = set()
         children = set()
+        subdomain = Utils.grab_subdomain_name(url)
+        subdomain_url  = Utils.grab_subdomain_url(url)
+
         try:
             response = requests.get("http://www." + url)
             if response.status_code == 200:
                 self.tags = BeautifulSoup(response.content, 'lxml').find_all('a', { "href" : True })
                 for link in self.tags:
-                    children.add(Utils.grab_domain_name(link.attrs['href']))
+                    if link.attrs['href'].startswith(subdomain):
+                        children.add("https://"+ link.attrs['href'])  
+                    elif link.attrs['href'].startswith("http"):
+                        children.add(link.attrs['href'])
+                    elif link.attrs['href'].startswith("/"):
+                        children.add(subdomain_url + link.attrs['href'])
+                    else:
+                        children.add(subdomain_url + "/" + link.attrs['href'])
             else:
                 print(url, " responded with ", response.status_code, "- could not evaluate children")
         except Exception as e :

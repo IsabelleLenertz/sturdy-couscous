@@ -20,6 +20,16 @@ def grab_domain_name(url):
     url_split = tldextract.extract(url)
     return url_split.registered_domain
 
+def grab_subdomain_name(url):
+    url_split = tldextract.extract(url)
+    if url_split.subdomain != "www":
+        return '.'.join(part for part in url_split if part)
+    return '.'.join([url_split.domain, url_split.suffix])
+
+def grab_subdomain_url(url):
+    url_split = tldextract.extract(url)
+    return '.'.join(part for part in url_split if part)
+
 def get_client():
     try:
         client = MongoClient(

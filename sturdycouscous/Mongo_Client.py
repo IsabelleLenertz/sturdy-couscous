@@ -9,9 +9,14 @@ class Client:
 
     def connect(self):
         try:
-            self.client = Utils.connect_client()
+            self.client = MongoClient(
+                    host = [ str(Utils.DOMAIN) + ":" + str(Utils.PORT) ],
+                    serverSelectionTimeoutMS = 3000, # 3 second timeout
+                    username = "root",
+                    password = "root"
+            )
             db = self.client[Utils.DB_NAME]
-            self.collection = db[Utils.DOMAIN_COLLECTION]
+            self.collection = db[self.collection_name]
             return True
         except errors.ServerSelectionTimeoutError as err:
             raise err
