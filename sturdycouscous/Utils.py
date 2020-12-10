@@ -2,10 +2,13 @@ from logging import root
 import tldextract
 from pymongo import MongoClient, errors
 
-CHILDREN_FILE = "sturdycouscous/resources/children.txt"
+CHILDREN_FILE = "sturdycouscous/resources/children-sample.txt"
 NO_DATA_FILE = "sturdycouscous/resources/no_data_urls.txt"
 TRAINING_FILE = "sturdycouscous/resources/keyword_training.csv"
 HISTORY_CSV = "sturdycouscous/resources/isa_last_week.csv"
+DOMAIN_JSON = "db/domain_info.json"
+CATEGORIES = "db/categories.json"
+OUTPUT_FILE = "output.txt"
 #Constants for mongodb
 DOMAIN = 'couscousmongo'
 PORT = 27017

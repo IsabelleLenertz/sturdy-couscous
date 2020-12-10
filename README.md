@@ -54,4 +54,6 @@ import_classification_data()
 # To export the database content to db/domain_info.json and db/categories.json - this will overwrite the samples provided
 export_database()
 
+# Configuration for Mongo Client connection, as well as paths for data input and output files, can be configured by adjusting the constants in Utils.py
+
 ```
