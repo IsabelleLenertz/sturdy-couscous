@@ -1,9 +1,10 @@
 from Mongo_Client import Client
+from Utils import OUTPUT_FILE
 
 class Printer():
     def __init__(self):
         self.client = Client('domain_info')
-        self.outputfile = open('output.txt', "w")
+        self.outputfile = open(OUTPUT_FILE, "w")
     def write_to_file(self, output):
         pass
         self.outputfile.writelines(output)
@@ -161,8 +162,6 @@ class Printer():
         outfile.writelines(self.tally_categories())
         outfile.write('\n')
         outfile.close()
-        print("************************ REPORT WRITTEN TO output.txt *************************")
-
 
     def header():
         figlet = '''

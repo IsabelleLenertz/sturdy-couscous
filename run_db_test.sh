@@ -28,7 +28,7 @@ function launchMongo() {
 
 	docker build -t $MONGO_IMAGE_TAG $PWD/db/
 
-	docker run --network=$NETWORK_NAME --name $MONGO_CONTAINER_NAME -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=root -h $MONGO_CONTAINER_NAME $MONGO_IMAGE_TAG &
+	docker run -d --network=$NETWORK_NAME --name $MONGO_CONTAINER_NAME -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=root -h $MONGO_CONTAINER_NAME $MONGO_IMAGE_TAG &
 
 }
 
@@ -36,7 +36,7 @@ function launchCore() {
 
 	docker build -t $CORE_IMAGE_TAG $PWD/sturdycouscous/
 
-	docker run -v $PWD/:/usr/src/app --network=$NETWORK_NAME --name $CORE_CONTAINER_NAME --link $MONGO_CONTAINER_NAME $CORE_IMAGE_TAG
+	docker run -it -v $PWD/:/usr/src/app --network=$NETWORK_NAME --name $CORE_CONTAINER_NAME --link $MONGO_CONTAINER_NAME $CORE_IMAGE_TAG /bin/bash
 
 }
 
