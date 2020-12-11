@@ -5,7 +5,7 @@ from pymongo import MongoClient, errors
 CHILDREN_FILE = "sturdycouscous/resources/children.txt"
 NO_DATA_FILE = "sturdycouscous/resources/no_data_urls.txt"
 TRAINING_FILE = "sturdycouscous/resources/keyword_training.csv"
-HISTORY_CSV = "sturdycouscous/resources/keyword_training.csv"
+HISTORY_CSV = "sturdycouscous/resources/isa_last_week.csv"
 #Constants for mongodb
 DOMAIN = 'couscousmongo'
 PORT = 27017
