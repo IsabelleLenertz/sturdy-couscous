@@ -88,7 +88,10 @@ def export_database():
     client.close()
 
 def import_data(mongo_collection = Utils.DOMAIN_COLLECTION, filename = Utils.DOMAIN_JSON):
-    client = Mongo_Client.Client(mongo_collection)
+    client = Utils.get_client()(mongo_collection)
+    db = client[Utils.DB_NAME]
+    domain_collection = db[Utils.DOMAIN_COLLECTION]
+    class_collection = db[Utils.CLASSIFIER_COLLECTION]
     try:
         if client.connect(): 
             with open(filename, 'r') as  data_file:
@@ -109,6 +112,6 @@ def print_report():
 
 def run_all():
     train_classifier()
-    get_dataset(HISTORY_CSV, 0, True, 5)
-    run_analysis(CHILDREN_FILE)
+    get_dataset(Utils.HISTORY_CSV, 0, True, 5)
+    run_analysis(Utils.CHILDREN_FILE)
     Printer().output_report()

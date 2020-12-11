@@ -63,7 +63,7 @@ class security_crawler(Thread):
 			t.join()
 
 	def run(self):
-		print("About to scan %s websites", len(self.sites_to_visit))
+		print("About to scan %s websites" % len(self.sites_to_visit))
 		mongo = Client(MONGO_COLLECTION)
 		c = Checker.connection_checker()
 
