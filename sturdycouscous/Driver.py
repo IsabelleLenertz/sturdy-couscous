@@ -2,11 +2,11 @@ import sys
 sys.path.append("/usr/src/app/sturdy-couscous/sturdycouscous")
 import Utils, SecurityCrawler
 from bouneschlupp import parser, ClassifierTraining
+from Printer import Printer
 import csv
 import nltk; 
 nltk.download('stopwords')
 nltk.download('punkt')
-import Printer
 import ast
 
 ''' call to generate the txt file with the domains to evaluate
